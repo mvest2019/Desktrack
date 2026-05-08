@@ -86,6 +86,10 @@ if (-not (Test-Path "dist\Syntra.exe")) {
     exit 1
 }
 
+# Copy config.ini next to the EXE so interval/URL overrides are always present
+Copy-Item "config.ini" "dist\config.ini" -Force
+Write-Host "      config.ini copied to dist\" -ForegroundColor Green
+
 $exePath = Resolve-Path "dist\Syntra.exe"
 $exeSize = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
 Write-Host "========================================" -ForegroundColor Green

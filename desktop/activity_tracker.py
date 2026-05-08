@@ -26,8 +26,8 @@ from pynput import mouse, keyboard
 # IDLE_THRESHOLD must always be less than WINDOW_SECONDS
 # Testing:    WINDOW_SECONDS=60,  IDLE_THRESHOLD=10
 # Production: WINDOW_SECONDS=600, IDLE_THRESHOLD=300
-IDLE_THRESHOLD  = 10    # Seconds of silence → mark as idle (10s for testing — change to 300 for production)
-WINDOW_SECONDS  = 60    # Length of one tracking window (1 min for testing — change to 600 for production)
+IDLE_THRESHOLD  = 180   # Seconds of silence → mark as idle (3 mins)
+WINDOW_SECONDS  = 600   # Length of one tracking window (10 mins)
 API_URL         = "http://localhost:8000"
 
 

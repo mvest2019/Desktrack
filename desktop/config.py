@@ -28,7 +28,7 @@ else:
 
 # ── Defaults (change STAGING_API_URL when your server is ready) ──
 STAGING_API_URL     = "http://108.181.168.43:8000"   # ← update to your server
-SCREENSHOT_INTERVAL = 15                              # seconds
+SCREENSHOT_INTERVAL = 180                             # seconds (3 minutes)
 
 
 def _load_config_file() -> dict:

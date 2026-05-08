@@ -149,7 +149,7 @@ export default function Dashboard() {
             <div>
               <h1 className={styles.pageTitle}>Dashboard</h1>
               <p className={styles.pageSubtitle}>
-                Monitoring active — screenshots every 15 seconds
+                Monitoring active — screenshots every 3 minutes
               </p>
             </div>
             <div className={styles.statusPill}>
@@ -169,7 +169,7 @@ export default function Dashboard() {
             <StatCard
               icon="⏱"
               label="Capture Interval"
-              value="15 sec"
+              value="3 min"
               color="#A78BFA"
             />
             <StatCard
@@ -338,7 +338,7 @@ function ActivitySection({ activity }) {
           <div className={styles.activityCardValue} style={{ color: "#A78BFA" }}>
             {fmtSecs(idleSec)}
           </div>
-          <div className={styles.activityCardSub}>no input for 5+ min</div>
+          <div className={styles.activityCardSub}>no input for 3+ min</div>
         </div>
       </div>
 
