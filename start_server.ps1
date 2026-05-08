@@ -21,13 +21,13 @@ Get-Process python, node -ErrorAction SilentlyContinue | Stop-Process -Force
 # ── Start FastAPI backend (port 8000) ────────────────────────
 Start-Process powershell -ArgumentList `
     "-NoExit", "-Command", `
-    "cd '$root\backend'; python -m uvicorn main:app --host 0.0.0.0 --port 8000" `
+    "cd '$root\backend'; pip install -r requirements.txt; python -m uvicorn main:app --host 0.0.0.0 --port 8000" `
     -WindowStyle Normal
 
 # ── Start Next.js frontend (port 3000) ───────────────────────
 Start-Process powershell -ArgumentList `
     "-NoExit", "-Command", `
-    "cd '$root\frontend'; npm run dev -- -H 0.0.0.0" `
+    "cd '$root\frontend'; npm install; npm run dev -- -H 0.0.0.0" `
     -WindowStyle Normal
 
 Write-Host ""
