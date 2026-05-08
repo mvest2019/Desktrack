@@ -461,6 +461,11 @@ class DashboardWindow(ctk.CTkToplevel):
         self.screenshot_count = 0
         self.is_capturing     = True      # Set to False to stop the loop
 
+        # Local queue — screenshots saved here when API is unreachable
+        import tempfile
+        self._queue_dir = Path(tempfile.gettempdir()) / "syntra_pending" / str(self.user_id)
+        self._queue_dir.mkdir(parents=True, exist_ok=True)
+
         # Activity tracker — started after UI is built
         self._tracker     = ActivityTracker(log_fn=self._log)
         self._app_tracker = AppTracker(log_fn=self._log)
@@ -488,6 +493,13 @@ class DashboardWindow(ctk.CTkToplevel):
         self._tracker.start(self.user_id)
         # Start app tracker (active window + browser URL)
         self._app_tracker.start(self.user_id)
+
+        # Start retry thread — uploads any queued screenshots when API is back
+        self._retry_thread = threading.Thread(
+            target=self._retry_pending_uploads,
+            daemon=True,
+        )
+        self._retry_thread.start()
 
         # Poll live activity status every 5 seconds for desktop status updates
         self.after(5000, self._poll_activity_status)
@@ -664,44 +676,68 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self._log("🛑 Capture stopped.")
 
+    def _upload_screenshot_bytes(self, raw_bytes: bytes, filename: str) -> bool:
+        """Try to upload raw PNG bytes to the API. Returns True on success."""
+        base64_str = base64.b64encode(raw_bytes).decode("utf-8")
+        try:
+            response = requests.post(
+                f"{API_URL}/api/screenshots/upload",
+                json={"user_id": self.user_id, "filename": filename, "image_data": base64_str},
+                timeout=30,
+            )
+            return response.status_code == 200
+        except Exception:
+            return False
+
     def _take_and_upload_screenshot(self):
-        """Take one screenshot, convert to base64, upload to FastAPI"""
+        """Take one screenshot, try to upload; save locally if API is down."""
 
         # ── Step 1: Take screenshot ──────────────────────
         screenshot = pyautogui.screenshot()
 
-        # ── Step 2: Compress and convert to base64 ───────
-        # We save to an in-memory buffer instead of a file
+        # ── Step 2: Compress to PNG bytes ────────────────
         buffer = io.BytesIO()
         screenshot.save(buffer, format="PNG", optimize=True)
-        raw_bytes    = buffer.getvalue()
-        base64_str   = base64.b64encode(raw_bytes).decode("utf-8")
+        raw_bytes = buffer.getvalue()
 
         # ── Step 3: Build filename ────────────────────────
         ts       = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"screenshot_{self.user_id}_{ts}.png"
 
-        # ── Step 4: Upload to backend ─────────────────────
-        response = requests.post(
-            f"{API_URL}/api/screenshots/upload",
-            json={
-                "user_id":    self.user_id,
-                "filename":   filename,
-                "image_data": base64_str,
-            },
-            timeout=30,
-        )
-
-        if response.status_code == 200:
+        # ── Step 4: Upload or queue locally ──────────────
+        if self._upload_screenshot_bytes(raw_bytes, filename):
             self.screenshot_count += 1
-            size_kb = len(raw_bytes) // 1024
             now_str = datetime.now().strftime("%H:%M:%S")
-
-            # Update the UI (must happen on main thread)
-            self.after(0, self._update_stats, now_str, size_kb)
-            self._log(f"📷 Screenshot #{self.screenshot_count} saved ({size_kb} KB)")
+            self.after(0, self._update_stats, now_str, len(raw_bytes) // 1024)
+            self._log(f"📷 Screenshot #{self.screenshot_count} uploaded")
         else:
-            self._log(f"⚠  Upload failed: {response.status_code} — {response.text[:80]}")
+            # API down — save to local queue, retry thread will upload later
+            local_path = self._queue_dir / filename
+            local_path.write_bytes(raw_bytes)
+            self._log(f"💾 API unavailable — queued locally: {local_path.name}")
+
+    def _retry_pending_uploads(self):
+        """Background thread: retry uploading queued screenshots when API is back."""
+        while self.is_capturing:
+            pending = sorted(self._queue_dir.glob("*.png"))
+            for f in pending:
+                if not self.is_capturing:
+                    break
+                try:
+                    raw_bytes = f.read_bytes()
+                    if self._upload_screenshot_bytes(raw_bytes, f.name):
+                        f.unlink()  # Delete after successful upload
+                        self.screenshot_count += 1
+                        now_str = datetime.now().strftime("%H:%M:%S")
+                        self.after(0, self._update_stats, now_str, len(raw_bytes) // 1024)
+                        self._log(f"✅ Queued screenshot uploaded: {f.name}")
+                except Exception:
+                    pass  # Will retry next cycle
+            # Wait 60 seconds before next retry attempt
+            for _ in range(120):
+                if not self.is_capturing:
+                    break
+                time.sleep(0.5)
 
     def _update_stats(self, time_str: str, size_kb: int):
         """Update the count and last-capture labels"""

@@ -47,7 +47,7 @@ DefaultGroupName={#MyAppName}
 ; ── Output ───────────────────────────────────────────────────
 OutputDir=installer_output
 OutputBaseFilename=SyntraSetup
-; SetupIconFile=assets\icon.ico   ; uncomment after running build_exe.ps1 (it creates assets/icon.ico)
+SetupIconFile=assets\icon.ico
 
 ; ── Compression ──────────────────────────────────────────────
 Compression=lzma
@@ -71,9 +71,8 @@ Name: "desktopicon"; Description: "Create a &Desktop shortcut"; GroupDescription
 ; Source is relative to this .iss file (both are in desktop/)
 Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
-; ── If the user can override the server URL, include a default config.ini ──
-; Uncomment these lines if you want to ship a config.ini:
-; Source: "dist_config\config.ini"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+; ── Ship config.ini so app points to the correct server ──
+Source: "config.ini"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
 
 [Icons]
 ; ── Start Menu shortcut ──────────────────────────────────────
