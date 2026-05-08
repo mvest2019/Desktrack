@@ -64,8 +64,8 @@ app = FastAPI(
 
 # ── CORS: read allowed origins from environment variable ────
 # In .env.staging set: ALLOWED_ORIGINS=https://your-frontend.vercel.app,http://localhost:3000
-# Falls back to localhost only if env var not set.
-_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+# Falls back to localhost + LAN IPs if env var not set.
+_raw_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://192.168.1.77:3000,http://0.0.0.0:3000")
 ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
 app.add_middleware(

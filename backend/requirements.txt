@@ -4,7 +4,7 @@ uvicorn[standard]==0.24.0
 
 # ── PostgreSQL (users table) ───────────────────────────────
 sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.12
 
 # ── MongoDB (raw_samples / screenshots) ───────────────────
 pymongo==4.6.1             # Sync MongoDB driver

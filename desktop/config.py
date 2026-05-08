@@ -27,7 +27,7 @@ else:
 
 
 # ── Defaults (change STAGING_API_URL when your server is ready) ──
-STAGING_API_URL     = "http://108.181.168.43:8000"   # ← update to your server
+STAGING_API_URL     = "http://192.168.1.77:8000"   # ← update to your server
 SCREENSHOT_INTERVAL = 180                             # seconds (3 minutes)
 
 
