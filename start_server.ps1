@@ -1,53 +1,46 @@
 # =============================================================
-# start_server.ps1 — Start backend + frontend on Windows Server
+# start_server.ps1 — Start backend + frontend (LAN accessible)
 # =============================================================
-# Run this ONCE to start both services.
-# They run in separate PowerShell windows that stay open.
-#
-# FIRST TIME ONLY — run these before this script:
-#   pip install -r backend\requirements.txt
-#   cd frontend ; npm install ; npm run build ; cd ..
-#
-# EVERY TIME after reboot or to restart:
+# Run from the Desktrack root folder:
 #   .\start_server.ps1
+#
+# Others on LAN can open: http://<your-ip>:3000
+# Desktop app config.ini: api_url = http://<your-ip>:8000
 # =============================================================
 
 $root = $PSScriptRoot
 
-# ── Check .env exists ────────────────────────────────────────
-if (-not (Test-Path "$root\backend\.env")) {
-    Write-Host "ERROR: backend\.env not found!" -ForegroundColor Red
-    Write-Host "Copy backend\.env.staging to backend\.env and fill in values." -ForegroundColor Yellow
-    exit 1
-}
+# ── Detect LAN IP ────────────────────────────────────────────
+$lanIp = (Get-NetIPAddress -AddressFamily IPv4 |
+    Where-Object { $_.IPAddress -notlike "127.*" -and $_.PrefixOrigin -ne "WellKnown" } |
+    Select-Object -First 1).IPAddress
+
+# ── Kill any existing python/node ────────────────────────────
+Get-Process python, node -ErrorAction SilentlyContinue | Stop-Process -Force
 
 # ── Start FastAPI backend (port 8000) ────────────────────────
-Write-Host "Starting backend on port 8000..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList `
     "-NoExit", "-Command", `
-    "cd '$root\backend'; `$env:PYTHONUNBUFFERED=1; python -m uvicorn main:app --host 0.0.0.0 --port 8000" `
+    "cd '$root\backend'; python -m uvicorn main:app --host 0.0.0.0 --port 8000" `
     -WindowStyle Normal
 
-Start-Sleep -Seconds 3
-
 # ── Start Next.js frontend (port 3000) ───────────────────────
-# Uses `npm start` (production) not `npm run dev`
-Write-Host "Starting frontend on port 3000..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList `
     "-NoExit", "-Command", `
-    "cd '$root\frontend'; npm start" `
+    "cd '$root\frontend'; npm run dev -- -H 0.0.0.0" `
     -WindowStyle Normal
 
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Green
-Write-Host "  SERVICES STARTED" -ForegroundColor Green
-Write-Host "  Backend:  http://localhost:8000/docs" -ForegroundColor Green
-Write-Host "  Frontend: http://localhost:3000" -ForegroundColor Green
-Write-Host "" -ForegroundColor Green
-Write-Host "  From other machines:" -ForegroundColor Green
-Write-Host "  Backend:  http://108.181.168.43:8000" -ForegroundColor Green
-Write-Host "  Frontend: http://108.181.168.43:3000" -ForegroundColor Green
-Write-Host "========================================" -ForegroundColor Green
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Syntra LAN Server started!" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Your LAN IP : $lanIp" -ForegroundColor Yellow
+Write-Host "  Frontend    : http://${lanIp}:3000" -ForegroundColor Green
+Write-Host "  Backend     : http://${lanIp}:8000" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Desktop app config.ini on client PCs:" -ForegroundColor Gray
+Write-Host "    api_url = http://${lanIp}:8000" -ForegroundColor Gray
+Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Keep both PowerShell windows open." -ForegroundColor Yellow
 Write-Host "Closing them stops the services." -ForegroundColor Yellow
