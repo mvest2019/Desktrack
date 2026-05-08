@@ -47,7 +47,7 @@ DefaultGroupName={#MyAppName}
 ; ── Output ───────────────────────────────────────────────────
 OutputDir=installer_output
 OutputBaseFilename=SyntraSetup
-SetupIconFile=assets\icon.ico   ; comment out if you don't have an icon yet
+; SetupIconFile=assets\icon.ico   ; uncomment after running build_exe.ps1 (it creates assets/icon.ico)
 
 ; ── Compression ──────────────────────────────────────────────
 Compression=lzma

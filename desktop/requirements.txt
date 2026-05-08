@@ -3,7 +3,7 @@ customtkinter==5.2.2      # Modern-looking widgets (dark mode, rounded corners)
 
 # ── Screenshot capture ─────────────────────────────────────
 pyautogui==0.9.54         # Take screenshots with one line of code
-Pillow==10.1.0            # Image processing (used internally by pyautogui)
+Pillow>=11.0.0            # Python 3.13 requires Pillow 11+
 
 # ── API communication ──────────────────────────────────────
 requests==2.31.0          # Send HTTP requests to FastAPI backend
