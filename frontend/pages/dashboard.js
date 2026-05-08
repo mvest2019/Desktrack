@@ -1,0 +1,407 @@
+// ============================================================
+// pages/dashboard.js — Dashboard Page
+// ============================================================
+// Shows after successful login.
+// Displays real-time screenshot stats and a list of recent captures.
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Head from "next/head";
+import Link from "next/link";
+import styles from "../styles/Dashboard.module.css";
+import API from "../config";
+
+export default function Dashboard() {
+  const router = useRouter();
+
+  const [user, setUser]               = useState(null);
+  const [stats, setStats]             = useState({ total_screenshots: 0, last_capture: null });
+  const [screenshots, setScreenshots] = useState([]);
+  const [selectedImg, setSelectedImg] = useState(null);
+  const [activity, setActivity]       = useState(null);  // activity summary from API
+
+  // ── On page load: check login & fetch data ───────────────
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (!stored) {
+      router.push("/");   // Not logged in → back to login
+      return;
+    }
+    const userData = JSON.parse(stored);
+
+    // Admin can view any user's dashboard via ?uid=<user_id>
+    const targetId = router.query.uid
+      ? parseInt(router.query.uid)
+      : userData.user_id;
+
+    // Non-admin users cannot view other people's dashboards
+    if (router.query.uid && userData.user_type !== "admin") {
+      router.push("/dashboard");
+      return;
+    }
+
+    setUser(userData);
+    fetchData(targetId);
+
+    const interval = setInterval(() => fetchData(targetId), 15000);
+    return () => clearInterval(interval);
+  }, [router.query.uid]);
+
+  // ── Fetch stats + screenshot list + activity ─────────────
+  async function fetchData(userId) {
+    try {
+      const [statsRes, screenshotsRes, activityRes] = await Promise.all([
+        fetch(`${API}/api/stats/${userId}`),
+        fetch(`${API}/api/screenshots/${userId}?limit=12`),
+        fetch(`${API}/api/activity/${userId}?limit=16`),
+      ]);
+
+      if (statsRes.ok)       setStats(await statsRes.json());
+      if (screenshotsRes.ok) {
+        const data = await screenshotsRes.json();
+        setScreenshots(data.screenshots || []);
+      }
+      if (activityRes.ok)    setActivity(await activityRes.json());
+    } catch (err) {
+      console.error("Failed to fetch data:", err);
+    }
+  }
+
+  // ── Load and show a screenshot image ────────────────────
+  function viewScreenshot(screenshotId) {
+    const meta = screenshots.find((s) => s.id === screenshotId) || {};
+    setSelectedImg({
+      ...meta,
+      imgUrl: `${API}/api/screenshots/${user.user_id}/${screenshotId}/image`,
+    });
+  }
+
+  function navigateModal(dir) {
+    const idx = screenshots.findIndex((s) => s.id === selectedImg.id);
+    const next = screenshots[idx + dir];
+    if (next) viewScreenshot(next.id);
+  }
+
+  // ── Logout ───────────────────────────────────────────────
+  function logout() {
+    localStorage.removeItem("user");
+    router.push("/");
+  }
+
+  // Format date nicely
+  function formatTime(isoString) {
+    if (!isoString) return "—";
+    return new Date(isoString).toLocaleString();
+  }
+
+  if (!user) return null;
+
+  return (
+    <>
+      <Head>
+        <title>Syntra — Dashboard</title>
+      </Head>
+
+      <div className={styles.page}>
+        {/* ── Sidebar ─────────────────────────────────── */}
+        <aside className={styles.sidebar}>
+          <div className={styles.logo}>
+            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
+            <span className={styles.logoText}>Syntra</span>
+          </div>
+
+          <nav className={styles.nav}>
+            <Link className={`${styles.navItem} ${styles.active}`} href="/dashboard">
+              <span>📊</span> Dashboard
+            </Link>
+            <Link className={styles.navItem} href="/screenshots">
+              <span>📷</span> Screenshots
+            </Link>
+            <Link className={styles.navItem} href="/activity">
+              <span>🖥</span> Activity
+            </Link>
+            {user.user_type === "admin" && (
+              <Link className={styles.navItem} href="/admin">
+                <span>🛡</span> Admin Portal
+              </Link>
+            )}
+          </nav>
+
+          <div className={styles.sidebarFooter}>
+            <div className={styles.userBadge}>
+              <div className={styles.avatar}>
+                {user.username?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div className={styles.userName}>{user.username}</div>
+                <div className={styles.userEmail}>{user.email}</div>
+              </div>
+            </div>
+            <button onClick={logout} className={styles.logoutBtn}>
+              Logout
+            </button>
+          </div>
+        </aside>
+
+        {/* ── Main content ────────────────────────────── */}
+        <main className={styles.main}>
+          <div className={styles.topBar}>
+            <div>
+              <h1 className={styles.pageTitle}>Dashboard</h1>
+              <p className={styles.pageSubtitle}>
+                Monitoring active — screenshots every 15 seconds
+              </p>
+            </div>
+            <div className={styles.statusPill}>
+              <span className={styles.statusDot} />
+              Live
+            </div>
+          </div>
+
+          {/* ── Stat cards ───────────────────────────── */}
+          <div className={styles.statsGrid}>
+            <StatCard
+              icon="📷"
+              label="Total Screenshots"
+              value={stats.total_screenshots.toLocaleString()}
+              color="#4A9EFF"
+            />
+            <StatCard
+              icon="⏱"
+              label="Capture Interval"
+              value="15 sec"
+              color="#A78BFA"
+            />
+            <StatCard
+              icon="🕐"
+              label="Last Capture"
+              value={stats.last_capture ? new Date(stats.last_capture).toLocaleTimeString() : "—"}
+              color="#34D399"
+            />
+            <StatCard
+              icon="👤"
+              label="Logged in as"
+              value={user.username}
+              color="#F59E0B"
+            />
+          </div>
+
+          {/* ── Activity tracking ────────────────────── */}
+          <ActivitySection activity={activity} />
+
+          {/* ── Screenshot grid ──────────────────────── */}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.sectionTitle}>Recent Screenshots</h2>
+              <span className={styles.count}>{screenshots.length} shown</span>
+            </div>
+
+            {screenshots.length === 0 ? (
+              <div className={styles.empty}>
+                <span className={styles.emptyIcon}>📷</span>
+                <p>No screenshots yet. Open the desktop app and log in to start capturing.</p>
+              </div>
+            ) : (
+              <div className={styles.screenshotGrid}>
+                {screenshots.map((s) => (
+                  <div
+                    key={s.id}
+                    className={styles.screenshotCard}
+                    onClick={() => viewScreenshot(s.id)}
+                  >
+                    <ScreenshotThumb screenshotId={s.id} userId={user.user_id} />
+                    <div className={styles.screenshotInfo}>
+                      <div className={styles.screenshotTime}>
+                        {formatTime(s.taken_at)}
+                      </div>
+                      <div className={styles.screenshotSize}>{s.file_size_kb} KB</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* ── Image viewer modal ───────────────────────── */}
+        {selectedImg && (
+          <div className={styles.modalOverlay} onClick={() => setSelectedImg(null)}>
+            {/* Prev arrow */}
+            {screenshots.findIndex((s) => s.id === selectedImg.id) > 0 && (
+              <button className={styles.navArrow} style={{ left: 16 }}
+                onClick={(e) => { e.stopPropagation(); navigateModal(-1); }}>
+                ‹
+              </button>
+            )}
+
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <span>{selectedImg.filename || "Screenshot"}</span>
+                <button onClick={() => setSelectedImg(null)} className={styles.closeBtn}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                <img
+                  src={selectedImg.imgUrl}
+                  alt={selectedImg.filename}
+                  className={styles.fullImage}
+                />
+              </div>
+              <div className={styles.modalFooter}>
+                Taken at: {formatTime(selectedImg.taken_at)}
+              </div>
+            </div>
+
+            {/* Next arrow */}
+            {screenshots.findIndex((s) => s.id === selectedImg.id) < screenshots.length - 1 && (
+              <button className={styles.navArrow} style={{ right: 16 }}
+                onClick={(e) => { e.stopPropagation(); navigateModal(1); }}>
+                ›
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── Thumbnail loader — uses direct image URL ─────────────────
+function ScreenshotThumb({ screenshotId, userId }) {
+  const src = `${API}/api/screenshots/${userId}/${screenshotId}/image`;
+
+  return (
+    <div className={styles.screenshotThumb}>
+      <img
+        src={src}
+        alt="screenshot"
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        onError={(e) => {
+          e.target.style.display = "none";
+          e.target.parentNode.innerHTML = '<span style="font-size:28px;opacity:0.25">📷</span>';
+        }}
+      />
+    </div>
+  );
+}
+
+// ── Activity section component ───────────────────────────────
+function ActivitySection({ activity }) {
+  // Helper: seconds → "Xh Ym" or "Xm"
+  function fmtSecs(s) {
+    if (!s) return "0m";
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+  }
+
+  const pct        = activity?.today_percent   ?? 0;
+  const activeSec  = activity?.today_active_sec ?? 0;
+  const idleSec    = activity?.today_idle_sec   ?? 0;
+
+  // Chart uses last N windows (oldest → newest)
+  const logs = activity?.logs ? [...activity.logs].reverse() : [];
+
+  return (
+    <div style={{ marginBottom: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <h2 className={styles.sectionTitle}>Activity</h2>
+        <span className={styles.count}>Today</span>
+      </div>
+
+      {/* 3 summary cards */}
+      <div className={styles.activityGrid}>
+        {/* Activity % */}
+        <div className={styles.activityCard}>
+          <div className={styles.activityCardLabel}>Activity</div>
+          <div className={styles.activityCardValue} style={{ color: pct >= 70 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#F87171" }}>
+            {pct.toFixed(0)}%
+          </div>
+          <div className={styles.activityPercBar}>
+            <div className={styles.activityPercFill} style={{ width: `${pct}%` }} />
+          </div>
+          <div className={styles.activityCardSub}>of today&apos;s tracked time</div>
+        </div>
+
+        {/* Active time */}
+        <div className={styles.activityCard}>
+          <div className={styles.activityCardLabel}>Active Time</div>
+          <div className={styles.activityCardValue} style={{ color: "#4A9EFF" }}>
+            {fmtSecs(activeSec)}
+          </div>
+          <div className={styles.activityCardSub}>mouse + keyboard detected</div>
+        </div>
+
+        {/* Idle time */}
+        <div className={styles.activityCard}>
+          <div className={styles.activityCardLabel}>Idle Time</div>
+          <div className={styles.activityCardValue} style={{ color: "#A78BFA" }}>
+            {fmtSecs(idleSec)}
+          </div>
+          <div className={styles.activityCardSub}>no input for 5+ min</div>
+        </div>
+      </div>
+
+      {/* Timeline bar chart */}
+      {logs.length > 0 && <TimelineChart logs={logs} />}
+    </div>
+  );
+}
+
+// ── Timeline bar chart component ─────────────────────────────
+function TimelineChart({ logs }) {
+  function timeLabel(iso) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+
+  return (
+    <div className={styles.chartWrap}>
+      <div className={styles.chartTitle}>Activity Timeline (10-min windows)</div>
+      <div className={styles.chartBars}>
+        {logs.map((w, i) => {
+          const pct  = w.activity_percent;
+          const hue  = pct >= 70 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#F87171";
+          const hPx  = Math.max(4, Math.round((pct / 100) * 72)); // max 72px bar height
+          return (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div
+                className={styles.chartBar}
+                style={{ height: hPx, background: hue, width: 28 }}
+                title={`${timeLabel(w.window_start)} — ${pct}% active`}
+              />
+              <div className={styles.chartBarLabel}>{timeLabel(w.window_start)}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div className={styles.chartLegend}>
+        <div className={styles.legendItem}>
+          <div className={styles.legendDot} style={{ background: "#34D399" }} />
+          Active (≥70%)
+        </div>
+        <div className={styles.legendItem}>
+          <div className={styles.legendDot} style={{ background: "#F59E0B" }} />
+          Moderate (40–69%)
+        </div>
+        <div className={styles.legendItem}>
+          <div className={styles.legendDot} style={{ background: "#F87171" }} />
+          Idle (&lt;40%)
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Small reusable stat card component ──────────────────────
+function StatCard({ icon, label, value, color }) {
+  return (
+    <div className={styles.statCard}>
+      <div className={styles.statIcon} style={{ background: `${color}20`, color }}>
+        {icon}
+      </div>
+      <div className={styles.statValue}>{value}</div>
+      <div className={styles.statLabel}>{label}</div>
+    </div>
+  );
+}

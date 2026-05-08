@@ -1,0 +1,17 @@
+# ── Modern UI framework ────────────────────────────────────
+customtkinter==5.2.2      # Modern-looking widgets (dark mode, rounded corners)
+
+# ── Screenshot capture ─────────────────────────────────────
+pyautogui==0.9.54         # Take screenshots with one line of code
+Pillow==10.1.0            # Image processing (used internally by pyautogui)
+
+# ── API communication ──────────────────────────────────────
+requests==2.31.0          # Send HTTP requests to FastAPI backend
+
+# ── Activity tracking ──────────────────────────────────────
+pynput==1.7.6             # Listen to mouse movement and keyboard presses
+
+# ── App / window tracking ──────────────────────────────────
+pywin32                   # Win32 API: GetForegroundWindow, GetWindowText, GetWindowThreadProcessId
+psutil                    # Convert PID → process name (chrome.exe, code.exe, etc.)
+uiautomation              # Windows UI Automation: read browser address bar URL

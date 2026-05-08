@@ -1,0 +1,56 @@
+[Unit]
+# ============================================================
+# deploy/syntra-backend.service  — systemd service file
+# ============================================================
+# systemd is the Linux "task manager" that:
+#   - Starts your backend when the server boots
+#   - Automatically restarts it if it crashes
+#   - Lets you manage it with: systemctl start/stop/restart syntra-backend
+#
+# HOW TO INSTALL (on server):
+#   sudo cp deploy/syntra-backend.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable syntra-backend    ← start on every reboot
+#   sudo systemctl start syntra-backend     ← start now
+#
+# HOW TO CHECK LOGS:
+#   sudo journalctl -u syntra-backend -f    ← live logs
+# ============================================================
+Description=Syntra FastAPI Backend
+After=network.target postgresql.service mongod.service
+
+[Service]
+# Run as this user (NOT as root for security)
+User=www-data
+Group=www-data
+
+# The backend subfolder inside the cloned repo.
+# Full path on server: /opt/syntra/backend/
+# (because you cloned the whole project to /opt/syntra/)
+WorkingDirectory=/opt/syntra/backend
+
+# The .env file sits inside the backend/ subfolder.
+# Create it on the server from .env.example — never commit it to git.
+EnvironmentFile=/opt/syntra/backend/.env
+
+# The command that starts the server
+# /opt/syntra/venv/bin/uvicorn  ← uses the virtualenv's uvicorn
+# main:app                       ← main.py, the `app` object
+# --host 0.0.0.0                 ← listen on all network interfaces
+# --port 8000                    ← port 8000
+# --workers 2                    ← 2 parallel worker processes
+ExecStart=/opt/syntra/venv/bin/uvicorn main:app \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 2
+
+# Restart policy: if the process exits (crash, exception), restart it
+Restart=on-failure
+RestartSec=5s
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

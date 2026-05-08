@@ -1,0 +1,18 @@
+# ── FastAPI & server ───────────────────────────────────────
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# ── PostgreSQL (users table) ───────────────────────────────
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+
+# ── MongoDB (raw_samples / screenshots) ───────────────────
+pymongo==4.6.1             # Sync MongoDB driver
+dnspython==2.4.2           # Required for mongodb+srv:// connection strings (Atlas)
+
+# ── Security ───────────────────────────────────────────────
+bcrypt==4.1.1
+
+# ── Utilities ──────────────────────────────────────────────
+python-dotenv==1.0.0
+pydantic==2.5.0
