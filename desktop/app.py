@@ -34,6 +34,12 @@ from datetime import datetime
 from activity_tracker import ActivityTracker   # Mouse/keyboard activity tracking
 from app_tracker import AppTracker             # Active window + browser URL tracking
 from config import API_URL, SCREENSHOT_INTERVAL  # Central config (reads server URL)
+from pathlib import Path
+
+# ── App icon paths ─────────────────────────────────────────
+_HERE     = Path(__file__).parent
+_ICON_ICO = str(_HERE / "app_icon.ico")
+_ICON_PNG = str(Path(__file__).parent.parent / "imgs" / "app_icon.png")
 
 # ── Configuration ──────────────────────────────────────────
 # API_URL and SCREENSHOT_INTERVAL now come from config.py.
@@ -63,6 +69,10 @@ class LoginWindow(ctk.CTk):
         self.resizable(False, False)
         self._center_window(440, 620)
         ctk.set_appearance_mode("dark")
+        try:
+            self.iconbitmap(_ICON_ICO)
+        except Exception:
+            pass
 
         self._build_ui()
 
@@ -89,8 +99,12 @@ class LoginWindow(ctk.CTk):
                                 width=68, height=68)
         icon_box.pack()
         icon_box.pack_propagate(False)
-        ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
-                     text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
+        try:
+            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(48, 48))
+            ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
+        except Exception:
+            ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
+                         text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
 
         # ── Title & subtitle ──────────────────────────────
         ctk.CTkLabel(inner, text="Syntra",
@@ -228,9 +242,9 @@ class LoginWindow(ctk.CTk):
 
     def _login_success(self, user_data: dict):
         """Called on main thread after successful login"""
-        self.destroy()                        # Close login window
-        dashboard = DashboardWindow(user_data)
-        dashboard.mainloop()
+        self.withdraw()                       # Hide login window (keep root alive)
+        dashboard = DashboardWindow(self, user_data)
+        dashboard.focus()
 
     def _login_failure(self, message: str):
         """Show error and re-enable the button"""
@@ -251,6 +265,10 @@ class RegisterWindow(ctk.CTkToplevel):
         self.resizable(False, False)
         self._center_window(460, 660)
         self.configure(fg_color="#161b27")
+        try:
+            self.after(200, lambda: self.iconbitmap(_ICON_ICO))
+        except Exception:
+            pass
         self._build_ui()
 
     def _center_window(self, w, h):
@@ -292,8 +310,12 @@ class RegisterWindow(ctk.CTkToplevel):
                                 width=68, height=68)
         icon_box.pack()
         icon_box.pack_propagate(False)
-        ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
-                     text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
+        try:
+            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(48, 48))
+            ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
+        except Exception:
+            ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
+                         text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
 
         # ── Title & subtitle ──────────────────────────────
         ctk.CTkLabel(inner, text="Create Account",
@@ -380,7 +402,21 @@ class RegisterWindow(ctk.CTkToplevel):
             )
             data = res.json()
             if res.ok and data.get("success"):
-                self.after(0, self._success)
+                # Auto-login immediately after registration
+                self.after(0, lambda: self.btn.configure(
+                    text="✓ Account created! Signing in...", state="disabled", fg_color="#2ecc71"
+                ))
+                login_res = requests.post(
+                    f"{API_URL}/api/login",
+                    json={"email": email, "password": password},
+                    timeout=10,
+                )
+                if login_res.status_code == 200:
+                    user_data = login_res.json()
+                    self.after(0, lambda: self._auto_login(user_data))
+                else:
+                    # Registration succeeded but auto-login failed — just close
+                    self.after(0, self._success_no_login)
             else:
                 msg = data.get("detail", "Registration failed.")
                 self.after(0, lambda: self._failure(msg))
@@ -389,7 +425,14 @@ class RegisterWindow(ctk.CTkToplevel):
         except Exception as e:
             self.after(0, lambda: self._failure(f"⚠  Error: {e}"))
 
-    def _success(self):
+    def _auto_login(self, user_data: dict):
+        """Close register window and hand off to login window's success handler."""
+        parent = self.master
+        self.destroy()
+        if parent and parent.winfo_exists():
+            parent._login_success(user_data)
+
+    def _success_no_login(self):
         self.error_var.set("")
         self.btn.configure(text="✓ Account created! Closing...", state="disabled",
                            fg_color="#2ecc71")
@@ -401,16 +444,17 @@ class RegisterWindow(ctk.CTkToplevel):
 
 
 
-class DashboardWindow(ctk.CTk):
+class DashboardWindow(ctk.CTkToplevel):
     """
     Opens after successful login.
     Shows screenshot stats and controls.
     Runs the screenshot loop in a background thread.
     """
 
-    def __init__(self, user_data: dict):
-        super().__init__()
+    def __init__(self, login_win, user_data: dict):
+        super().__init__(login_win)
 
+        self._login_win       = login_win
         self.user_data        = user_data
         self.user_id          = user_data["user_id"]
         self.username         = user_data["username"]
@@ -425,6 +469,10 @@ class DashboardWindow(ctk.CTk):
         self.geometry("540x680")
         self.resizable(False, False)
         self._center_window(540, 680)
+        try:
+            self.after(200, lambda: self.iconbitmap(_ICON_ICO))
+        except Exception:
+            pass
 
         self._build_ui()
         self._animate_progress()  # Start after all widgets are built
@@ -460,11 +508,17 @@ class DashboardWindow(ctk.CTk):
         header.pack(fill="x")
         header.pack_propagate(False)
 
-        ctk.CTkLabel(
-            header,
-            text="⚡  Syntra",
-            font=ctk.CTkFont(size=19, weight="bold"),
-        ).pack(side="left", padx=20, pady=18)
+        try:
+            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(32, 32))
+            ctk.CTkLabel(header, image=_hdr_img, text="  Syntra",
+                         compound="left",
+                         font=ctk.CTkFont(size=19, weight="bold")).pack(side="left", padx=20, pady=18)
+        except Exception:
+            ctk.CTkLabel(
+                header,
+                text="⚡  Syntra",
+                font=ctk.CTkFont(size=19, weight="bold"),
+            ).pack(side="left", padx=20, pady=18)
 
         # Live indicator
         live_frame = ctk.CTkFrame(header, fg_color="transparent")
@@ -667,8 +721,12 @@ class DashboardWindow(ctk.CTk):
             self._tracker.stop()
             self._app_tracker.stop()
             self.destroy()
-            # Re-open the login window
-            LoginWindow().mainloop()
+            # Show login window again
+            self._login_win.email_var.set("")
+            self._login_win.password_var.set("")
+            self._login_win.error_var.set("")
+            self._login_win.login_btn.configure(text="Sign In  →", state="normal")
+            self._login_win.deiconify()
 
     def _on_close(self):
         if messagebox.askyesno("Exit", "Stop capturing and exit the app?"):
@@ -676,6 +734,7 @@ class DashboardWindow(ctk.CTk):
             self._tracker.stop()
             self._app_tracker.stop()
             self.destroy()
+            self._login_win.destroy()
 
 
 # ══════════════════════════════════════════════════════════
