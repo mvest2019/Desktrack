@@ -16,6 +16,12 @@
 
 block_cipher = None
 
+# ── Icon: only include if the file exists (build still works without it) ──
+import os as _os
+_icon_path  = 'assets/icon.ico'
+_icon       = _icon_path if _os.path.exists(_icon_path) else None
+_icon_datas = [(_icon_path, 'assets')] if _icon else []
+
 a = Analysis(
     # ── Entry point ─────────────────────────────────────────
     # This is the first Python file that runs when the EXE starts.
@@ -27,9 +33,7 @@ a = Analysis(
     # ── Extra non-Python files to bundle ──────────────────
     # Format: ('source_path', 'dest_folder_inside_bundle')
     # If you add an icon file, list it here so it's included.
-    datas=[
-        # ('assets/icon.ico', 'assets'),   # ← uncomment if you add an icon
-    ],
+    datas=_icon_datas,
 
     hiddenimports=[
         # PyInstaller sometimes misses these — list them explicitly
@@ -77,7 +81,7 @@ exe = EXE(
     # console=False  →  no black terminal window appears when user runs it
     console=False,
 
-    # icon='assets/icon.ico',   # ← uncomment after adding an icon file
+    icon=_icon,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
