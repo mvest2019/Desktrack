@@ -50,8 +50,9 @@ Base.metadata.create_all(bind=engine)
 
 # ── Screenshot storage folder ────────────────────────────────
 # All screenshots saved as PNG files under  backend/screenshots/{user_id}/
-SCREENSHOT_DIR = Path(__file__).parent / "screenshots"
-SCREENSHOT_DIR.mkdir(exist_ok=True)
+
+SCREENSHOT_DIR = Path("/tmp/screenshots")
+SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
     title="Syntra API",
