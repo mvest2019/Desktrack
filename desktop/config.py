@@ -26,9 +26,9 @@ else:
     APP_DIR = Path(__file__).parent              # folder containing app.py
 
 
-# ── Defaults (change STAGING_API_URL when your server is ready) ──
-STAGING_API_URL     = "http://192.168.1.77:8000"   # ← update to your server
-SCREENSHOT_INTERVAL = 180                             # seconds (3 minutes)
+# ── Defaults ────────────────────────────────────────────────
+STAGING_API_URL     = "http://69.62.76.202:8000"  # ✅ public server IP
+SCREENSHOT_INTERVAL = 180                          # seconds (3 minutes)
 
 
 def _load_config_file() -> dict:
