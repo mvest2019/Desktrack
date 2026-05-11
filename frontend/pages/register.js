@@ -3,6 +3,7 @@
 // ============================================================
 
 import { useState } from "react";
+import API from "../config";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Login.module.css";
@@ -34,7 +35,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/register", {
+      const res = await fetch(`${API}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, password, user_type: userType }),
