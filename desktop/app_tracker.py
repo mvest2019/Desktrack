@@ -35,6 +35,8 @@ import time
 import requests
 from datetime import datetime
 
+from config import API_URL   # ✅ reads from config.ini / env var (was hardcoded localhost)
+
 # ── pywin32 + psutil (Windows-only) ────────────────────────
 try:
     import win32gui
@@ -56,7 +58,6 @@ except Exception:
 # ── Config ──────────────────────────────────────────────────
 POLL_INTERVAL  = 3    # seconds between active-window polls
 FLUSH_INTERVAL = 60   # seconds between batch sends to backend
-API_URL        = "http://localhost:8000"
 
 # Process names that are browsers
 BROWSER_PROCESSES = {"chrome.exe", "msedge.exe", "brave.exe", "firefox.exe"}

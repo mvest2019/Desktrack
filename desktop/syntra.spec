@@ -16,24 +16,29 @@
 
 block_cipher = None
 
-# ── Icon: only include if the file exists (build still works without it) ──
 import os as _os
+
+# ── assets/icon.ico — used as the EXE file icon (built by build_exe.ps1) ──
 _icon_path  = 'assets/icon.ico'
 _icon       = _icon_path if _os.path.exists(_icon_path) else None
 _icon_datas = [(_icon_path, 'assets')] if _icon else []
 
+# ── app_icon.ico — used at runtime for the window titlebar (app.py line ~41) ──
+# Must be bundled so Path(__file__).parent resolves it correctly inside the EXE.
+_app_icon_path  = 'app_icon.ico'
+_app_icon_datas = [(_app_icon_path, '.')] if _os.path.exists(_app_icon_path) else []
+
 a = Analysis(
     # ── Entry point ─────────────────────────────────────────
-    # This is the first Python file that runs when the EXE starts.
     ['app.py'],
 
-    pathex=['.'],           # extra Python search paths
-    binaries=[],            # extra .dll / .so files (none needed here)
+    pathex=['.'],
+    binaries=[],
 
     # ── Extra non-Python files to bundle ──────────────────
-    # Format: ('source_path', 'dest_folder_inside_bundle')
-    # If you add an icon file, list it here so it's included.
-    datas=_icon_datas,
+    # assets/icon.ico  → EXE file icon (shown in Explorer / taskbar)
+    # app_icon.ico     → runtime window titlebar icon (loaded by app.py)
+    datas=_icon_datas + _app_icon_datas,
 
     hiddenimports=[
         # PyInstaller sometimes misses these — list them explicitly
@@ -70,15 +75,15 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Syntra',              # ← name of the output .exe file
+    name='Syntra',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,                   # compress the EXE (reduces file size ~30%)
+    upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
 
-    # console=False  →  no black terminal window appears when user runs it
+    # console=False → no black terminal window appears when user runs it
     console=False,
 
     icon=_icon,

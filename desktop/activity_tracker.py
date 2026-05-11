@@ -21,6 +21,7 @@ import requests
 from datetime import datetime
 
 from pynput import mouse, keyboard
+from config import API_URL   # ✅ reads from config.ini / env var (was hardcoded localhost)
 
 # ── Config ─────────────────────────────────────────────────
 # IDLE_THRESHOLD must always be less than WINDOW_SECONDS
@@ -28,7 +29,6 @@ from pynput import mouse, keyboard
 # Production: WINDOW_SECONDS=600, IDLE_THRESHOLD=300
 IDLE_THRESHOLD  = 180   # Seconds of silence → mark as idle (3 mins)
 WINDOW_SECONDS  = 600   # Length of one tracking window (10 mins)
-API_URL         = "http://localhost:8000"
 
 
 class ActivityTracker:
