@@ -12,14 +12,18 @@ class LoginResponse(BaseModel):
     user_id: int
     username: str
     email: str
-    user_type: str  # "admin" or "user"
+    user_type: str           # "admin" or "user"
+    project: Optional[str]   # "Bold" or "MView"
+    designation: Optional[str]
     message: str
 
 class RegisterRequest(BaseModel):
     username: str
     email: str
     password: str
-    user_type: Optional[str] = "user"  # "admin" or "user"
+    user_type: Optional[str] = "user"    # "admin" or "user"
+    project: Optional[str] = None        # "Bold" or "MView"
+    designation: Optional[str] = None    # e.g. "Frontend Dev", "Marketing"
 
 class RegisterResponse(BaseModel):
     success: bool
@@ -117,15 +121,35 @@ class AppSummaryResponse(BaseModel):
     entries: List[AppSummaryEntry]
 
 
+# ── User Profile schemas ─────────────────────────────────────
+
+class UserProfileResponse(BaseModel):
+    user_id:     int
+    username:    str
+    email:       str
+    user_type:   str
+    project:     Optional[str]
+    designation: Optional[str]
+    isactive:    bool
+    created_at:  str
+
+class UserProfileUpdateRequest(BaseModel):
+    username:    Optional[str] = None
+    designation: Optional[str] = None
+    project:     Optional[str] = None  # "Bold" or "MView"
+
+
 # ── Admin schemas ────────────────────────────────────────────
 
 class AdminUserItem(BaseModel):
-    user_id:    int
-    username:   str
-    email:      str
-    user_type:  str
-    isactive:   bool
-    created_at: str
+    user_id:     int
+    username:    str
+    email:       str
+    user_type:   str
+    project:     Optional[str]
+    designation: Optional[str]
+    isactive:    bool
+    created_at:  str
 
 class AdminUsersResponse(BaseModel):
     count: int

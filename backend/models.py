@@ -17,13 +17,15 @@ class User(Base):
     """
     __tablename__ = "users"
 
-    id         = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    username   = Column(String(100), nullable=False)
-    email      = Column(String(255), nullable=False, unique=True, index=True)
-    password   = Column(String(255), nullable=False)   # Stores HASHED password
-    user_type  = Column(String(20), nullable=False, default="user")  # "admin" or "user"
-    isactive   = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id          = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    username    = Column(String(100), nullable=False)
+    email       = Column(String(255), nullable=False, unique=True, index=True)
+    password    = Column(String(255), nullable=False)
+    user_type   = Column(String(20), nullable=False, default="user")  # "admin" or "user"
+    project     = Column(String(50), nullable=True)   # "Bold" or "MView"
+    designation = Column(String(100), nullable=True)  # e.g. "Frontend Dev", "Marketing"
+    isactive    = Column(Boolean, default=True)
+    created_at  = Column(DateTime, default=datetime.utcnow)
 
     # One user → many screenshots (one-to-many relationship)
     screenshots = relationship("Screenshot", back_populates="user")

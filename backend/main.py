@@ -43,15 +43,16 @@ from schemas import (
     AppLogBatchRequest, AppLogBatchResponse, AppLogsResponse, AppLogRecord,
     AppSummaryResponse, AppSummaryEntry,
     AdminUserItem, AdminUsersResponse,
+    UserProfileResponse, UserProfileUpdateRequest,
 )
 
 # Auto-create PostgreSQL tables on startup
 Base.metadata.create_all(bind=engine)
 
 # ── Screenshot storage folder ────────────────────────────────
-# All screenshots saved as PNG files under  backend/screenshots/{user_id}/
+# Stores screenshots inside the project: backend/screenshots/{user_id}/
 
-SCREENSHOT_DIR = Path("/tmp/screenshots")
+SCREENSHOT_DIR = Path(__file__).parent / "screenshots"
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
@@ -122,6 +123,8 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         email=request.email,
         password=hashed,
         user_type=request.user_type if request.user_type in ("admin", "user") else "user",
+        project=request.project if request.project in ("Bold", "MView") else None,
+        designation=request.designation,
         isactive=True,
     )
     db.add(user)
@@ -181,6 +184,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         username=user.username,
         email=user.email,
         user_type=user.user_type,
+        project=user.project,
+        designation=user.designation,
         message="Login successful",
     )
 
@@ -535,6 +540,60 @@ def get_app_summary(user_id: int, date: str = None, db: Session = Depends(get_db
 
 
 # ══════════════════════════════════════════════════════════
+# USER PROFILE
+# ══════════════════════════════════════════════════════════
+
+@app.get("/api/users/{user_id}/profile", response_model=UserProfileResponse, tags=["Profile"])
+def get_profile(user_id: int, db: Session = Depends(get_db)):
+    """Return profile details for a user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return UserProfileResponse(
+        user_id=user.id,
+        username=user.username,
+        email=user.email,
+        user_type=user.user_type,
+        project=user.project,
+        designation=user.designation,
+        isactive=user.isactive,
+        created_at=user.created_at.isoformat(),
+    )
+
+
+@app.patch("/api/users/{user_id}/profile", response_model=UserProfileResponse, tags=["Profile"])
+def update_profile(user_id: int, request: UserProfileUpdateRequest, db: Session = Depends(get_db)):
+    """Update username, designation, or project for a user."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if request.username is not None:
+        user.username = request.username
+    if request.designation is not None:
+        user.designation = request.designation
+    if request.project is not None:
+        if request.project not in ("Bold", "MView"):
+            raise HTTPException(status_code=400, detail="project must be 'Bold' or 'MView'")
+        user.project = request.project
+
+    db.commit()
+    db.refresh(user)
+
+    return UserProfileResponse(
+        user_id=user.id,
+        username=user.username,
+        email=user.email,
+        user_type=user.user_type,
+        project=user.project,
+        designation=user.designation,
+        isactive=user.isactive,
+        created_at=user.created_at.isoformat(),
+    )
+
+
+# ══════════════════════════════════════════════════════════
 # ADMIN — list all users (admin only)
 # ══════════════════════════════════════════════════════════
 
@@ -557,6 +616,8 @@ def admin_list_users(admin_id: int, db: Session = Depends(get_db)):
                 username=u.username,
                 email=u.email,
                 user_type=u.user_type,
+                project=u.project,
+                designation=u.designation,
                 isactive=u.isactive,
                 created_at=u.created_at.isoformat(),
             )

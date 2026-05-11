@@ -18,7 +18,8 @@ export default function Dashboard() {
   const [stats, setStats]             = useState({ total_screenshots: 0, last_capture: null });
   const [screenshots, setScreenshots] = useState([]);
   const [selectedImg, setSelectedImg] = useState(null);
-  const [activity, setActivity]       = useState(null);  // activity summary from API
+  const [activity, setActivity]       = useState(null);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // ── On page load: check login & fetch data ───────────────
   useEffect(() => {
@@ -42,9 +43,11 @@ export default function Dashboard() {
 
     setUser(userData);
     fetchData(targetId);
+    setShowWelcome(true);
+    const hideWelcome = setTimeout(() => setShowWelcome(false), 4000);
 
     const interval = setInterval(() => fetchData(targetId), 15000);
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); clearTimeout(hideWelcome); };
   }, [router.query.uid]);
 
   // ── Fetch stats + screenshot list + activity ─────────────
@@ -63,7 +66,6 @@ export default function Dashboard() {
       }
       if (activityRes.ok)    setActivity(await activityRes.json());
     } catch (err) {
-      console.error("Failed to fetch data:", err);
     }
   }
 
@@ -119,6 +121,9 @@ export default function Dashboard() {
             </Link>
             <Link className={styles.navItem} href="/activity">
               <span>🖥</span> Activity
+            </Link>
+            <Link className={styles.navItem} href="/profile">
+              <span>👤</span> Profile
             </Link>
             {user.user_type === "admin" && (
               <Link className={styles.navItem} href="/admin">
@@ -222,6 +227,41 @@ export default function Dashboard() {
             )}
           </div>
         </main>
+
+        {/* ── Welcome popup ───────────────────────────── */}
+        {showWelcome && (
+          <div style={{
+            position: "fixed", bottom: 28, right: 28, zIndex: 300,
+            background: "linear-gradient(135deg, #1a1a2e, #16213e)",
+            border: "1px solid rgba(74,158,255,0.3)",
+            borderRadius: 16, padding: "18px 22px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", gap: 14,
+            animation: "slideUp 0.3s ease",
+            minWidth: 260,
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: "50%",
+              background: "linear-gradient(135deg, #4A9EFF, #A78BFA)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 20, flexShrink: 0,
+            }}>
+              {user?.username?.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
+                Welcome back, {user?.username?.split(" ")[0]} 👋
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+                Syntra is tracking your activity
+              </div>
+            </div>
+            <button onClick={() => setShowWelcome(false)} style={{
+              marginLeft: "auto", background: "none", border: "none",
+              color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 16, padding: 4,
+            }}>✕</button>
+          </div>
+        )}
 
         {/* ── Image viewer modal ───────────────────────── */}
         {selectedImg && (

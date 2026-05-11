@@ -29,6 +29,8 @@ import time
 import pyautogui                      # Take screenshots
 import base64                         # Convert image → text for API
 import io                             # In-memory file operations
+import json
+import sys
 from PIL import Image                 # Image processing
 from datetime import datetime
 from activity_tracker import ActivityTracker   # Mouse/keyboard activity tracking
@@ -40,6 +42,38 @@ from pathlib import Path
 _HERE     = Path(__file__).parent
 _ICON_ICO = str(_HERE / "app_icon.ico")
 _ICON_PNG = str(Path(__file__).parent.parent / "imgs" / "app_icon.png")
+
+# ── Session persistence ─────────────────────────────────────
+if getattr(sys, "frozen", False):
+    _APP_DIR = Path(sys.executable).parent   # next to the .exe
+else:
+    _APP_DIR = Path(__file__).parent
+
+_SESSION_FILE = _APP_DIR / "session.json"
+
+
+def _save_session(user_data: dict):
+    try:
+        _SESSION_FILE.write_text(json.dumps(user_data), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _load_session():
+    try:
+        if _SESSION_FILE.exists():
+            return json.loads(_SESSION_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return None
+
+
+def _clear_session():
+    try:
+        if _SESSION_FILE.exists():
+            _SESSION_FILE.unlink()
+    except Exception:
+        pass
 
 # ── Configuration ──────────────────────────────────────────
 # API_URL and SCREENSHOT_INTERVAL now come from config.py.
@@ -75,6 +109,11 @@ class LoginWindow(ctk.CTk):
             pass
 
         self._build_ui()
+
+        # If a session is saved, skip login and show the Start screen
+        saved = _load_session()
+        if saved:
+            self.after(150, lambda: self._show_start_screen(saved))
 
     def _center_window(self, w, h):
         """Put the window in the middle of the screen"""
@@ -242,9 +281,14 @@ class LoginWindow(ctk.CTk):
 
     def _login_success(self, user_data: dict):
         """Called on main thread after successful login"""
-        self.withdraw()                       # Hide login window (keep root alive)
-        dashboard = DashboardWindow(self, user_data)
-        dashboard.focus()
+        _save_session(user_data)              # Persist so next launch skips login
+        self.withdraw()
+        DashboardWindow(self, user_data).focus()
+
+    def _show_start_screen(self, user_data: dict):
+        """Hide login and show the one-click Start screen"""
+        self.withdraw()
+        StartWindow(self, user_data)
 
     def _login_failure(self, message: str):
         """Show error and re-enable the button"""
@@ -444,6 +488,119 @@ class RegisterWindow(ctk.CTkToplevel):
 
 
 
+# ══════════════════════════════════════════════════════════
+#  START WINDOW  (shown on every open after first login)
+# ══════════════════════════════════════════════════════════
+class StartWindow(ctk.CTkToplevel):
+    """
+    One-click start screen shown when a saved session exists.
+    No password needed — just press Start to begin monitoring.
+    """
+
+    def __init__(self, login_win, user_data: dict):
+        super().__init__(login_win)
+        self._login_win = login_win
+        self.user_data  = user_data
+
+        self.title("Syntra")
+        self.geometry("440x500")
+        self.resizable(False, False)
+        self._center_window(440, 500)
+        self.configure(fg_color="#161b27")
+        try:
+            self.after(200, lambda: self.iconbitmap(_ICON_ICO))
+        except Exception:
+            pass
+
+        self._build_ui()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _center_window(self, w, h):
+        sw = self.winfo_screenwidth()
+        sh = self.winfo_screenheight()
+        self.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
+
+    def _build_ui(self):
+        inner = ctk.CTkFrame(self, fg_color="transparent")
+        inner.pack(expand=True, fill="both", padx=44, pady=0)
+
+        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
+
+        # Icon
+        icon_box = ctk.CTkFrame(inner, fg_color="#1e2436", corner_radius=16,
+                                width=68, height=68)
+        icon_box.pack()
+        icon_box.pack_propagate(False)
+        try:
+            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(48, 48))
+            ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
+        except Exception:
+            ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
+                         text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
+
+        # Greeting
+        name = self.user_data.get("username", "there")
+        ctk.CTkLabel(inner, text="Welcome back,",
+                     font=ctk.CTkFont(size=14), text_color="#6b7494").pack(pady=(18, 0))
+        ctk.CTkLabel(inner, text=name,
+                     font=ctk.CTkFont(size=30, weight="bold"),
+                     text_color="#ffffff").pack(pady=(2, 6))
+
+        # Project / designation badge
+        project     = self.user_data.get("project", "")
+        designation = self.user_data.get("designation", "")
+        badge_text  = "  ·  ".join(filter(None, [designation, project]))
+        if badge_text:
+            badge_frame = ctk.CTkFrame(inner, fg_color="#1a2840", corner_radius=20)
+            badge_frame.pack(pady=(0, 26))
+            ctk.CTkLabel(badge_frame, text=badge_text,
+                         font=ctk.CTkFont(size=12), text_color="#4a9eff",
+                         padx=14, pady=6).pack()
+        else:
+            ctk.CTkFrame(inner, fg_color="transparent", height=26).pack()
+
+        # Start button
+        ctk.CTkButton(
+            inner, text="▶   Start Monitoring", height=56,
+            font=ctk.CTkFont(size=16, weight="bold"),
+            fg_color="#4f8ef7", hover_color="#3a7ae8",
+            corner_radius=14, command=self._start,
+        ).pack(fill="x")
+
+        # Sign out link
+        foot = ctk.CTkFrame(inner, fg_color="transparent")
+        foot.pack(pady=(16, 0))
+        ctk.CTkLabel(foot, text="Not you?  ",
+                     font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
+        ctk.CTkButton(foot, text="Sign out",
+                      font=ctk.CTkFont(size=12, weight="bold"),
+                      text_color="#f87171", fg_color="transparent",
+                      hover_color="#1a2035", border_width=0, height=22, width=60,
+                      command=self._sign_out).pack(side="left")
+
+        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
+
+    def _start(self):
+        self.withdraw()
+        DashboardWindow(self._login_win, self.user_data, start_win=self).focus()
+
+    def _sign_out(self):
+        _clear_session()
+        self.destroy()
+        self._login_win.email_var.set("")
+        self._login_win.password_var.set("")
+        self._login_win.error_var.set("")
+        self._login_win.login_btn.configure(text="Sign In  →", state="normal")
+        self._login_win.deiconify()
+
+    def _on_close(self):
+        # Closing the window exits the app but keeps session for next time
+        self._login_win.destroy()
+
+
+# ══════════════════════════════════════════════════════════
+#  DASHBOARD WINDOW
+# ══════════════════════════════════════════════════════════
 class DashboardWindow(ctk.CTkToplevel):
     """
     Opens after successful login.
@@ -451,10 +608,11 @@ class DashboardWindow(ctk.CTkToplevel):
     Runs the screenshot loop in a background thread.
     """
 
-    def __init__(self, login_win, user_data: dict):
+    def __init__(self, login_win, user_data: dict, start_win=None):
         super().__init__(login_win)
 
         self._login_win       = login_win
+        self._start_win       = start_win
         self.user_data        = user_data
         self.user_id          = user_data["user_id"]
         self.username         = user_data["username"]
@@ -537,6 +695,19 @@ class DashboardWindow(ctk.CTkToplevel):
         live_frame.pack(side="right", padx=20)
         ctk.CTkLabel(live_frame, text="●", text_color="#00FF88", font=ctk.CTkFont(size=16)).pack(side="left")
         ctk.CTkLabel(live_frame, text=" MONITORING", font=ctk.CTkFont(size=11, weight="bold"), text_color="#00FF88").pack(side="left")
+
+        # ── Welcome banner (auto-hides after 4 s) ────────
+        self._welcome_bar = ctk.CTkFrame(self, height=42, corner_radius=0,
+                                         fg_color=("#0d1a30", "#0d1a30"))
+        self._welcome_bar.pack(fill="x")
+        self._welcome_bar.pack_propagate(False)
+        ctk.CTkLabel(
+            self._welcome_bar,
+            text=f"👋  Welcome back, {self.username}!   Syntra is monitoring your activity.",
+            font=ctk.CTkFont(size=12),
+            text_color="#5da8ff",
+        ).pack(expand=True)
+        self.after(4000, lambda: self._welcome_bar.pack_forget())
 
         # ── Content area ─────────────────────────────────
         content = ctk.CTkFrame(self, fg_color="transparent")
@@ -753,11 +924,18 @@ class DashboardWindow(ctk.CTkToplevel):
     # ── Logout & close ────────────────────────────────────
     def _logout(self):
         if messagebox.askyesno("Logout", "Stop capturing and logout?"):
+            _clear_session()
             self.is_capturing = False
             self._tracker.stop()
             self._app_tracker.stop()
             self.destroy()
-            # Show login window again
+            # Destroy start window if it was the entry point
+            if self._start_win:
+                try:
+                    self._start_win.destroy()
+                except Exception:
+                    pass
+            # Show fresh login window
             self._login_win.email_var.set("")
             self._login_win.password_var.set("")
             self._login_win.error_var.set("")
@@ -770,7 +948,7 @@ class DashboardWindow(ctk.CTkToplevel):
             self._tracker.stop()
             self._app_tracker.stop()
             self.destroy()
-            self._login_win.destroy()
+            self._login_win.destroy()   # session is kept — next open shows Start screen
 
 
 # ══════════════════════════════════════════════════════════

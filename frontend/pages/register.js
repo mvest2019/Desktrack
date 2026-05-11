@@ -1,6 +1,4 @@
-// ============================================================
 // pages/register.js — Create Account Page
-// ============================================================
 
 import { useState } from "react";
 import API from "../config";
@@ -11,20 +9,23 @@ import styles from "../styles/Login.module.css";
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [username, setUsername] = useState("");
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("user");
-  const [error, setError]       = useState("");
-  const [success, setSuccess]   = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [username, setUsername]       = useState("");
+  const [email, setEmail]             = useState("");
+  const [password, setPassword]       = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [userType, setUserType]       = useState("user");
+  const [project, setProject]         = useState("");
+  const [designation, setDesignation] = useState("");
+  const [error, setError]             = useState("");
+  const [success, setSuccess]         = useState("");
+  const [loading, setLoading]         = useState(false);
 
   async function handleRegister(e) {
     e.preventDefault();
     setError("");
     setSuccess("");
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !project) {
       setError("Please fill in all fields.");
       return;
     }
@@ -38,13 +39,21 @@ export default function RegisterPage() {
       const res = await fetch(`${API}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password, user_type: userType }),
+        body: JSON.stringify({ username, email, password, user_type: userType, project, designation }),
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setSuccess("Account created! Redirecting to login...");
-        setTimeout(() => router.push("/"), 2000);
+        // Auto-login: store user in localStorage and go straight to dashboard
+        localStorage.setItem("user", JSON.stringify({
+          user_id: data.user_id,
+          username,
+          email,
+          user_type: userType,
+          project,
+          designation,
+        }));
+        router.push("/dashboard");
       } else {
         setError(data.detail || "Registration failed.");
       }
@@ -55,91 +64,123 @@ export default function RegisterPage() {
     }
   }
 
+  // Compact input style — smaller padding so all fields fit
+  const inputStyle = { padding: "10px 14px 10px 38px", fontSize: "13px" };
+  const labelStyle = { fontSize: "12px" };
+
   return (
     <>
       <Head><title>Syntra — Register</title></Head>
       <div className={styles.page}>
         <div className={styles.blob1} />
         <div className={styles.blob2} />
-        <div className={styles.card}>
-          <div className={styles.header}>
-            <div className={styles.iconWrap}><span className={styles.icon}>⚡</span></div>
-            <h1 className={styles.title}>Create Account</h1>
+
+        {/* Narrower card, tighter padding */}
+        <div className={styles.card} style={{ padding: "28px 32px", maxWidth: 400 }}>
+
+          {/* Compact header */}
+          <div className={styles.header} style={{ marginBottom: 20 }}>
+            <div className={styles.iconWrap} style={{ width: 48, height: 48, borderRadius: 14, marginBottom: 10 }}>
+              <span className={styles.icon} style={{ fontSize: 22 }}>⚡</span>
+            </div>
+            <h1 className={styles.title} style={{ fontSize: 22, marginBottom: 4 }}>Create Account</h1>
             <p className={styles.subtitle}>Join Syntra today</p>
           </div>
 
-          <form onSubmit={handleRegister} className={styles.form}>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Full Name</label>
+          <form onSubmit={handleRegister} className={styles.form} style={{ gap: 12 }}>
+
+            {/* Full Name */}
+            <div className={styles.fieldGroup} style={{ gap: 5 }}>
+              <label className={styles.label} style={labelStyle}>Full Name</label>
               <div className={styles.inputWrap}>
                 <span className={styles.inputIcon}>👤</span>
-                <input
-                  type="text"
-                  className={styles.input}
-                  placeholder="Your name"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading}
-                />
+                <input type="text" className={styles.input} style={inputStyle}
+                  placeholder="Your name" value={username}
+                  onChange={(e) => setUsername(e.target.value)} disabled={loading} />
               </div>
             </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Email Address</label>
+            {/* Email */}
+            <div className={styles.fieldGroup} style={{ gap: 5 }}>
+              <label className={styles.label} style={labelStyle}>Email Address</label>
               <div className={styles.inputWrap}>
                 <span className={styles.inputIcon}>✉</span>
-                <input
-                  type="email"
-                  className={styles.input}
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                />
+                <input type="email" className={styles.input} style={inputStyle}
+                  placeholder="you@example.com" value={email}
+                  onChange={(e) => setEmail(e.target.value)} disabled={loading} />
               </div>
             </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Password</label>
+            {/* Password + eye toggle */}
+            <div className={styles.fieldGroup} style={{ gap: 5 }}>
+              <label className={styles.label} style={labelStyle}>Password</label>
               <div className={styles.inputWrap}>
                 <span className={styles.inputIcon}>🔒</span>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   className={styles.input}
+                  style={{ ...inputStyle, paddingRight: 40 }}
                   placeholder="Min. 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
                 />
+                <button type="button" className={styles.eyeBtn}
+                  onClick={() => setShowPassword(v => !v)}
+                  tabIndex={-1}>
+                  {showPassword ? "🙈" : "👁"}
+                </button>
               </div>
             </div>
 
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Account Type</label>
+            {/* Account Type */}
+            <div className={styles.fieldGroup} style={{ gap: 5 }}>
+              <label className={styles.label} style={labelStyle}>Account Type</label>
               <div className={styles.inputWrap}>
                 <span className={styles.inputIcon}>🛡</span>
-                <select
-                  className={styles.input}
-                  value={userType}
-                  onChange={(e) => setUserType(e.target.value)}
-                  disabled={loading}
-                  style={{ cursor: "pointer" }}
-                >
+                <select className={styles.input} style={{ ...inputStyle, cursor: "pointer" }}
+                  value={userType} onChange={(e) => setUserType(e.target.value)} disabled={loading}>
                   <option value="user">Employee (User)</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
             </div>
 
-            {error   && <div className={styles.errorBox}><span>⚠ {error}</span></div>}
-            {success && <div className={styles.successBox}><span>✅ {success}</span></div>}
+            {/* Project */}
+            <div className={styles.fieldGroup} style={{ gap: 5 }}>
+              <label className={styles.label} style={labelStyle}>Project / Website</label>
+              <div className={styles.inputWrap}>
+                <span className={styles.inputIcon}>🌐</span>
+                <select className={styles.input} style={{ ...inputStyle, cursor: "pointer" }}
+                  value={project} onChange={(e) => setProject(e.target.value)} disabled={loading}>
+                  <option value="">Select project...</option>
+                  <option value="Bold">Bold</option>
+                  <option value="MView">MView</option>
+                </select>
+              </div>
+            </div>
 
-            <button type="submit" className={styles.loginBtn} disabled={loading}>
+            {/* Designation */}
+            <div className={styles.fieldGroup} style={{ gap: 5 }}>
+              <label className={styles.label} style={labelStyle}>Designation</label>
+              <div className={styles.inputWrap}>
+                <span className={styles.inputIcon}>💼</span>
+                <input type="text" className={styles.input} style={inputStyle}
+                  placeholder="e.g. Frontend Dev, Marketing"
+                  value={designation} onChange={(e) => setDesignation(e.target.value)} disabled={loading} />
+              </div>
+            </div>
+
+            {error   && <div className={styles.errorBox} style={{ padding: "9px 12px", fontSize: 12 }}><span>⚠ {error}</span></div>}
+            {success && <div className={styles.successBox} style={{ padding: "9px 12px", fontSize: 12 }}><span>✅ {success}</span></div>}
+
+            <button type="submit" className={styles.loginBtn}
+              style={{ padding: "12px", fontSize: 14, marginTop: 2 }} disabled={loading}>
               {loading ? "Creating..." : "Create Account →"}
             </button>
           </form>
 
-          <p className={styles.registerText}>
+          <p className={styles.registerText} style={{ marginTop: 16, fontSize: 12 }}>
             Already have an account?{" "}
             <a href="/" className={styles.registerLink}>Sign in</a>
           </p>

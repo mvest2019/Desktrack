@@ -68,8 +68,7 @@ export default function AdminPortal() {
         const data = await res.json();
         setUsers(data.users || []);
       }
-    } catch (err) {
-      console.error("Failed to fetch users:", err);
+    } catch (_) {
     } finally {
       setLoading(false);
     }
@@ -90,9 +89,7 @@ export default function AdminPortal() {
       const activity   = actRes.ok     ? await actRes.json()     : null;
       const appSummary = appRes.ok     ? await appRes.json()     : null;
       setMemberData({ stats, screenshots: screensData.screenshots || [], activity, appSummary });
-    } catch (err) {
-      console.error("Failed to fetch member data:", err);
-    }
+    } catch (_) {}
   }
 
   async function changeRole(userId, newType) {

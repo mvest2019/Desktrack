@@ -136,7 +136,6 @@ export default function ActivityPage() {
         setSummary(j.entries || []);
       }
     } catch (err) {
-      console.error("Failed to fetch activity:", err);
     } finally {
       setLoading(false);
     }
@@ -225,6 +224,9 @@ export default function ActivityPage() {
             </Link>
             <Link className={`${styles.navItem} ${styles.active}`} href="/activity">
               <span>🖥</span> Activity
+            </Link>
+            <Link className={styles.navItem} href="/profile">
+              <span>👤</span> Profile
             </Link>
           </nav>
 

@@ -4,7 +4,7 @@
 // This is the first page users see. It sends email + password
 // to the FastAPI backend and redirects to the dashboard on success.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Login.module.css";
@@ -12,6 +12,15 @@ import API from "../config";
 
 export default function LoginPage() {
   const router = useRouter();
+
+  // If already logged in, skip the login page
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) {
+      const u = JSON.parse(stored);
+      router.replace(u.user_type === "admin" ? "/admin" : "/dashboard");
+    }
+  }, []);
 
   // Form state — tracks what the user types
   const [email, setEmail]       = useState("");

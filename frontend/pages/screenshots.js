@@ -115,7 +115,7 @@ export default function ScreenshotsPage() {
         const list = (await listRes.json()).screenshots || [];
         setAllShots(list);
       }
-    } catch (err) { console.error(err); }
+    } catch (_) {}
     finally { setLoading(false); }
   }
 
@@ -163,6 +163,7 @@ export default function ScreenshotsPage() {
             <Link href="/dashboard" className={styles.navItem}><span>📊</span> Dashboard</Link>
             <Link href="/screenshots" className={`${styles.navItem} ${styles.active}`}><span>📷</span> Screenshots</Link>
             <Link href="/activity" className={styles.navItem}><span>🖥</span> Activity</Link>
+            <Link href="/profile" className={styles.navItem}><span>👤</span> Profile</Link>
           </nav>
           <div className={styles.sidebarFooter}>
             <div className={styles.userBadge}>
