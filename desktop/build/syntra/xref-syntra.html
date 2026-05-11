@@ -15,7 +15,7 @@
 
 <div class="node">
   <a name="app.py"></a>
-  <a target="code" href="///D:/Desktrack/desktop/app.py" type="text/plain"><tt>app.py</tt></a>
+  <a target="code" href="///D:/desktracking-be/desktop/app.py" type="text/plain"><tt>app.py</tt></a>
 <span class="moduletype">Script</span>  <div class="import">
 imports:
     <a href="#PIL">PIL</a>
@@ -514,17 +514,6 @@ imported by:
  &#8226;   <a href="#typing_extensions">typing_extensions</a>
  &#8226;   <a href="#xml.etree.ElementTree">xml.etree.ElementTree</a>
  &#8226;   <a href="#yaml.constructor">yaml.constructor</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="'comtypes.gen'"></a>
-  <a target="code" href="" type="text/plain"><tt>'comtypes.gen'</tt></a>
-<span class="moduletype">MissingModule</span>  <div class="import">
-imported by:
-    <a href="#comtypes.client._generate">comtypes.client._generate</a>
 
   </div>
 
@@ -5667,10 +5656,11 @@ imported by:
 
 <div class="node">
   <a name="activity_tracker"></a>
-  <a target="code" href="///D:/Desktrack/desktop/activity_tracker.py" type="text/plain"><tt>activity_tracker</tt></a>
+  <a target="code" href="///D:/desktracking-be/desktop/activity_tracker.py" type="text/plain"><tt>activity_tracker</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#datetime">datetime</a>
+    <a href="#config">config</a>
+ &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#pynput">pynput</a>
  &#8226;   <a href="#pynput.keyboard">pynput.keyboard</a>
  &#8226;   <a href="#pynput.mouse">pynput.mouse</a>
@@ -5718,10 +5708,11 @@ imported by:
 
 <div class="node">
   <a name="app_tracker"></a>
-  <a target="code" href="///D:/Desktrack/desktop/app_tracker.py" type="text/plain"><tt>app_tracker</tt></a>
+  <a target="code" href="///D:/desktracking-be/desktop/app_tracker.py" type="text/plain"><tt>app_tracker</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#datetime">datetime</a>
+    <a href="#config">config</a>
+ &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#psutil">psutil</a>
  &#8226;   <a href="#requests">requests</a>
  &#8226;   <a href="#threading">threading</a>
@@ -7896,7 +7887,6 @@ imports:
  &#8226;   <a href="#comtypes._post_coinit.unknwn">comtypes._post_coinit.unknwn</a>
  &#8226;   <a href="#comtypes._safearray">comtypes._safearray</a>
  &#8226;   <a href="#comtypes._tlib_version_checker">comtypes._tlib_version_checker</a>
- &#8226;   <a href="#comtypes.gen">comtypes.gen</a>
  &#8226;   <a href="#comtypes.hresult">comtypes.hresult</a>
  &#8226;   <a href="#comtypes.messageloop">comtypes.messageloop</a>
  &#8226;   <a href="#comtypes.patcher">comtypes.patcher</a>
@@ -8550,10 +8540,10 @@ imported by:
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#'collections.abc'">'collections.abc'</a>
- &#8226;   <a href="#'comtypes.gen'">'comtypes.gen'</a>
  &#8226;   <a href="#comtypes">comtypes</a>
  &#8226;   <a href="#comtypes.GUID">comtypes.GUID</a>
  &#8226;   <a href="#comtypes.client">comtypes.client</a>
+ &#8226;   <a href="#comtypes.gen">comtypes.gen</a>
  &#8226;   <a href="#comtypes.tools">comtypes.tools</a>
  &#8226;   <a href="#comtypes.tools.codegenerator">comtypes.tools.codegenerator</a>
  &#8226;   <a href="#comtypes.tools.tlbparser">comtypes.tools.tlbparser</a>
@@ -8699,17 +8689,17 @@ imported by:
 
 <div class="node">
   <a name="comtypes.gen"></a>
-  <a target="code" href="" type="text/plain"><tt>comtypes.gen</tt></a>
-<span class="moduletype">MissingModule</span>  <div class="import">
+  <a target="code" href="///C:/Users/Realizer/AppData/Roaming/Python/Python314/site-packages/comtypes/gen/__init__.py" type="text/plain"><tt>comtypes.gen</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
 imports:
     <a href="#comtypes">comtypes</a>
 
   </div>
   <div class="import">
 imported by:
-    <a href="#comtypes">comtypes</a>
- &#8226;   <a href="#comtypes.client">comtypes.client</a>
+    <a href="#comtypes.client">comtypes.client</a>
  &#8226;   <a href="#comtypes.client._code_cache">comtypes.client._code_cache</a>
+ &#8226;   <a href="#comtypes.client._generate">comtypes.client._generate</a>
 
   </div>
 
@@ -9446,7 +9436,7 @@ imported by:
 
 <div class="node">
   <a name="config"></a>
-  <a target="code" href="///D:/Desktrack/desktop/config.py" type="text/plain"><tt>config</tt></a>
+  <a target="code" href="///D:/desktracking-be/desktop/config.py" type="text/plain"><tt>config</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#configparser">configparser</a>
@@ -9457,7 +9447,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#app.py">app.py</a>
+    <a href="#activity_tracker">activity_tracker</a>
+ &#8226;   <a href="#app.py">app.py</a>
+ &#8226;   <a href="#app_tracker">app_tracker</a>
 
   </div>
 
