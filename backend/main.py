@@ -29,7 +29,7 @@ log = logging.getLogger("ai_assistant")
 
 # PostgreSQL
 from database import get_db, engine
-from models import Base, User, ActivityLog, AppLog
+from models import Base, User, ActivityLog, AppLog, Task, TaskNote
 
 # MongoDB
 from mongo import get_raw_samples
@@ -44,6 +44,10 @@ from schemas import (
     AppSummaryResponse, AppSummaryEntry,
     AdminUserItem, AdminUsersResponse,
     UserProfileResponse, UserProfileUpdateRequest,
+    TaskCreateRequest, TaskEditRequest, TaskStatusUpdateRequest,
+    TaskNoteCreateRequest, TaskNoteItem, TaskItem,
+    TaskListResponse, TaskSummaryResponse,
+    AdminTaskItem, AdminTaskListResponse, AdminTaskStatsResponse, AdminTaskUserStat,
 )
 
 # Auto-create PostgreSQL tables on startup
@@ -646,4 +650,284 @@ def admin_change_user_type(user_id: int, admin_id: int, new_type: str, db: Sessi
     target.user_type = new_type
     db.commit()
     return {"success": True, "message": f"User {target.username} is now '{new_type}'"}
+
+
+# ══════════════════════════════════════════════════════════
+# TASKS — Daily task submission system (PostgreSQL)
+# ══════════════════════════════════════════════════════════
+
+def _task_to_item(t: Task) -> TaskItem:
+    """Convert a Task ORM object to the TaskItem schema."""
+    return TaskItem(
+        id=t.id,
+        user_id=t.user_id,
+        title=t.title,
+        description=t.description,
+        priority=t.priority,
+        status=t.status,
+        expected_completion_time=t.expected_completion_time,
+        task_date=t.task_date.isoformat(),
+        completed_at=t.completed_at.isoformat() if t.completed_at else None,
+        created_at=t.created_at.isoformat(),
+        updated_at=t.updated_at.isoformat(),
+        notes=[
+            TaskNoteItem(id=n.id, note=n.note, created_at=n.created_at.isoformat())
+            for n in sorted(t.notes, key=lambda n: n.created_at)
+        ],
+    )
+
+
+@app.post("/api/tasks", tags=["Tasks"])
+def create_task(request: TaskCreateRequest, db: Session = Depends(get_db)):
+    """Create a new task for today. Optionally includes a first progress note."""
+    from datetime import date as date_cls
+    user = db.query(User).filter(User.id == request.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    task = Task(
+        user_id=request.user_id,
+        title=request.title.strip(),
+        description=request.description,
+        priority=request.priority or "medium",
+        status="pending",
+        expected_completion_time=request.expected_completion_time,
+        task_date=date_cls.today(),
+    )
+    db.add(task)
+    db.flush()   # get task.id before commit
+
+    if request.notes and request.notes.strip():
+        note = TaskNote(task_id=task.id, user_id=request.user_id, note=request.notes.strip())
+        db.add(note)
+
+    db.commit()
+    db.refresh(task)
+    log.info("✅ Task created: user=%s title=%r", request.user_id, request.title)
+    return {"success": True, "task_id": task.id, "message": "Task created"}
+
+
+@app.get("/api/tasks/{user_id}", response_model=TaskListResponse, tags=["Tasks"])
+def get_tasks(user_id: int, date: str = None, status: str = None, db: Session = Depends(get_db)):
+    """Return tasks for a user, optionally filtered by date and/or status."""
+    from datetime import date as date_cls
+    try:
+        d = date_cls.fromisoformat(date) if date else date_cls.today()
+    except ValueError:
+        d = date_cls.today()
+
+    q = db.query(Task).filter(Task.user_id == user_id, Task.task_date == d)
+    if status:
+        q = q.filter(Task.status == status)
+    tasks = q.order_by(Task.created_at.asc()).all()
+
+    return TaskListResponse(
+        success=True,
+        user_id=user_id,
+        date=d.isoformat(),
+        count=len(tasks),
+        tasks=[_task_to_item(t) for t in tasks],
+    )
+
+
+@app.get("/api/tasks/{user_id}/summary", response_model=TaskSummaryResponse, tags=["Tasks"])
+def get_task_summary(user_id: int, date: str = None, db: Session = Depends(get_db)):
+    """Return task counts and completion % for the dashboard widget."""
+    from datetime import date as date_cls
+    try:
+        d = date_cls.fromisoformat(date) if date else date_cls.today()
+    except ValueError:
+        d = date_cls.today()
+
+    tasks = db.query(Task).filter(Task.user_id == user_id, Task.task_date == d).all()
+    total       = len(tasks)
+    pending     = sum(1 for t in tasks if t.status == "pending")
+    in_progress = sum(1 for t in tasks if t.status == "in_progress")
+    completed   = sum(1 for t in tasks if t.status == "completed")
+    pct         = round((completed / total) * 100, 1) if total > 0 else 0.0
+
+    return TaskSummaryResponse(
+        success=True, user_id=user_id, date=d.isoformat(),
+        total=total, pending=pending, in_progress=in_progress,
+        completed=completed, completion_pct=pct,
+    )
+
+
+@app.patch("/api/tasks/{task_id}", tags=["Tasks"])
+def edit_task(task_id: int, request: TaskEditRequest, db: Session = Depends(get_db)):
+    """Edit task title, description, priority, or expected_completion_time."""
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.user_id != request.user_id:
+        raise HTTPException(status_code=403, detail="Not your task")
+
+    if request.title is not None:
+        task.title = request.title.strip()
+    if request.description is not None:
+        task.description = request.description
+    if request.priority is not None:
+        if request.priority not in ("low", "medium", "high"):
+            raise HTTPException(status_code=400, detail="priority must be low/medium/high")
+        task.priority = request.priority
+    if request.expected_completion_time is not None:
+        task.expected_completion_time = request.expected_completion_time
+
+    task.updated_at = datetime.utcnow()
+    db.commit()
+    return {"success": True, "message": "Task updated"}
+
+
+@app.patch("/api/tasks/{task_id}/status", tags=["Tasks"])
+def update_task_status(task_id: int, request: TaskStatusUpdateRequest, db: Session = Depends(get_db)):
+    """Update task status. Sets completed_at when status becomes 'completed'."""
+    valid = ("pending", "in_progress", "completed")
+    if request.status not in valid:
+        raise HTTPException(status_code=400, detail=f"status must be one of {valid}")
+
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.user_id != request.user_id:
+        raise HTTPException(status_code=403, detail="Not your task")
+
+    task.status = request.status
+    task.updated_at = datetime.utcnow()
+    if request.status == "completed" and not task.completed_at:
+        task.completed_at = datetime.utcnow()
+    elif request.status != "completed":
+        task.completed_at = None   # re-open clears the timestamp
+
+    db.commit()
+    return {"success": True, "task_id": task_id, "status": request.status, "message": "Status updated"}
+
+
+@app.delete("/api/tasks/{task_id}", tags=["Tasks"])
+def delete_task(task_id: int, user_id: int, db: Session = Depends(get_db)):
+    """Delete a task and all its notes (cascade)."""
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if task.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not your task")
+
+    db.delete(task)
+    db.commit()
+    return {"success": True, "message": "Task deleted"}
+
+
+@app.post("/api/tasks/{task_id}/notes", tags=["Tasks"])
+def add_task_note(task_id: int, request: TaskNoteCreateRequest, db: Session = Depends(get_db)):
+    """Add a progress note to a task."""
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if not request.note.strip():
+        raise HTTPException(status_code=400, detail="Note cannot be empty")
+
+    note = TaskNote(task_id=task_id, user_id=request.user_id, note=request.note.strip())
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return {"success": True, "note_id": note.id, "message": "Note added"}
+
+
+@app.get("/api/admin/tasks", response_model=AdminTaskListResponse, tags=["Admin Tasks"])
+def admin_get_tasks(admin_id: int, date: str = None, user_id: int = None,
+                    status: str = None, project: str = None, db: Session = Depends(get_db)):
+    """Return all tasks across employees with optional filters."""
+    from datetime import date as date_cls
+    caller = db.query(User).filter(User.id == admin_id).first()
+    if not caller or caller.user_type != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    try:
+        d = date_cls.fromisoformat(date) if date else date_cls.today()
+    except ValueError:
+        d = date_cls.today()
+
+    q = db.query(Task, User).join(User, Task.user_id == User.id).filter(Task.task_date == d)
+    if user_id:
+        q = q.filter(Task.user_id == user_id)
+    if status:
+        q = q.filter(Task.status == status)
+    if project:
+        q = q.filter(User.project == project)
+
+    rows = q.order_by(Task.created_at.asc()).all()
+
+    items = [
+        AdminTaskItem(
+            task_id=t.id,
+            user_id=t.user_id,
+            username=u.username,
+            project=u.project,
+            title=t.title,
+            priority=t.priority,
+            status=t.status,
+            expected_completion_time=t.expected_completion_time,
+            task_date=t.task_date.isoformat(),
+            completed_at=t.completed_at.isoformat() if t.completed_at else None,
+            created_at=t.created_at.isoformat(),
+            note_count=len(t.notes),
+        )
+        for t, u in rows
+    ]
+
+    return AdminTaskListResponse(success=True, date=d.isoformat(), count=len(items), tasks=items)
+
+
+@app.get("/api/admin/tasks/stats", response_model=AdminTaskStatsResponse, tags=["Admin Tasks"])
+def admin_task_stats(admin_id: int, date: str = None, project: str = None, db: Session = Depends(get_db)):
+    """Team-level task productivity stats, broken down by employee."""
+    from datetime import date as date_cls
+    caller = db.query(User).filter(User.id == admin_id).first()
+    if not caller or caller.user_type != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    try:
+        d = date_cls.fromisoformat(date) if date else date_cls.today()
+    except ValueError:
+        d = date_cls.today()
+
+    q = db.query(Task, User).join(User, Task.user_id == User.id).filter(Task.task_date == d)
+    if project:
+        q = q.filter(User.project == project)
+    rows = q.all()
+
+    # Group by user
+    from collections import defaultdict
+    by_user: dict = defaultdict(lambda: {"user": None, "tasks": []})
+    for t, u in rows:
+        by_user[u.id]["user"] = u
+        by_user[u.id]["tasks"].append(t)
+
+    by_employee = []
+    for uid, data in by_user.items():
+        u = data["user"]
+        tasks = data["tasks"]
+        total       = len(tasks)
+        completed   = sum(1 for t in tasks if t.status == "completed")
+        in_progress = sum(1 for t in tasks if t.status == "in_progress")
+        pending     = sum(1 for t in tasks if t.status == "pending")
+        pct         = round((completed / total) * 100, 1) if total > 0 else 0.0
+        by_employee.append(AdminTaskUserStat(
+            user_id=u.id, username=u.username, project=u.project,
+            total=total, completed=completed, in_progress=in_progress,
+            pending=pending, completion_pct=pct,
+        ))
+
+    total_all     = len(rows)
+    completed_all = sum(1 for t, _ in rows if t.status == "completed")
+    in_prog_all   = sum(1 for t, _ in rows if t.status == "in_progress")
+    pending_all   = sum(1 for t, _ in rows if t.status == "pending")
+    pct_all       = round((completed_all / total_all) * 100, 1) if total_all > 0 else 0.0
+
+    return AdminTaskStatsResponse(
+        success=True, date=d.isoformat(),
+        total_tasks=total_all, completed=completed_all,
+        in_progress=in_prog_all, pending=pending_all,
+        completion_pct=pct_all,
+        by_employee=sorted(by_employee, key=lambda x: x.completion_pct, reverse=True),
+    )
 

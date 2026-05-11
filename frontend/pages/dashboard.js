@@ -14,11 +14,12 @@ import API from "../config";
 export default function Dashboard() {
   const router = useRouter();
 
-  const [user, setUser]               = useState(null);
-  const [stats, setStats]             = useState({ total_screenshots: 0, last_capture: null });
+  const [user,        setUser]        = useState(null);
+  const [stats,       setStats]       = useState({ total_screenshots: 0, last_capture: null });
   const [screenshots, setScreenshots] = useState([]);
   const [selectedImg, setSelectedImg] = useState(null);
-  const [activity, setActivity]       = useState(null);
+  const [activity,    setActivity]    = useState(null);
+  const [taskSummary, setTaskSummary] = useState(null);
   const [showWelcome, setShowWelcome] = useState(false);
 
   // ── On page load: check login & fetch data ───────────────
@@ -53,10 +54,11 @@ export default function Dashboard() {
   // ── Fetch stats + screenshot list + activity ─────────────
   async function fetchData(userId) {
     try {
-      const [statsRes, screenshotsRes, activityRes] = await Promise.all([
+      const [statsRes, screenshotsRes, activityRes, taskSumRes] = await Promise.all([
         fetch(`${API}/api/stats/${userId}`),
         fetch(`${API}/api/screenshots/${userId}?limit=12`),
         fetch(`${API}/api/activity/${userId}?limit=16`),
+        fetch(`${API}/api/tasks/${userId}/summary`),
       ]);
 
       if (statsRes.ok)       setStats(await statsRes.json());
@@ -65,6 +67,7 @@ export default function Dashboard() {
         setScreenshots(data.screenshots || []);
       }
       if (activityRes.ok)    setActivity(await activityRes.json());
+      if (taskSumRes.ok)     setTaskSummary(await taskSumRes.json());
     } catch (err) {
     }
   }
@@ -122,13 +125,21 @@ export default function Dashboard() {
             <Link className={styles.navItem} href="/activity">
               <span>🖥</span> Activity
             </Link>
+            <Link className={styles.navItem} href="/tasks">
+              <span>✅</span> My Tasks
+            </Link>
             <Link className={styles.navItem} href="/profile">
               <span>👤</span> Profile
             </Link>
             {user.user_type === "admin" && (
-              <Link className={styles.navItem} href="/admin">
-                <span>🛡</span> Admin Portal
-              </Link>
+              <>
+                <Link className={styles.navItem} href="/admin">
+                  <span>🛡</span> Admin Portal
+                </Link>
+                <Link className={styles.navItem} href="/admin-tasks">
+                  <span>📋</span> Task Overview
+                </Link>
+              </>
             )}
           </nav>
 
@@ -193,6 +204,9 @@ export default function Dashboard() {
 
           {/* ── Activity tracking ────────────────────── */}
           <ActivitySection activity={activity} />
+
+          {/* ── Task summary widget ───────────────────── */}
+          <TaskSummaryWidget summary={taskSummary} />
 
           {/* ── Screenshot grid ──────────────────────── */}
           <div className={styles.section}>
@@ -427,6 +441,46 @@ function TimelineChart({ logs }) {
         <div className={styles.legendItem}>
           <div className={styles.legendDot} style={{ background: "#F87171" }} />
           Idle (&lt;40%)
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Task summary widget ──────────────────────────────────────
+function TaskSummaryWidget({ summary }) {
+  if (!summary) return null;
+  const { total, pending, in_progress, completed, completion_pct } = summary;
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <h2 className={styles.sectionTitle}>Today&apos;s Tasks</h2>
+        <a href="/tasks" style={{ fontSize: 12, color: "#4A9EFF", textDecoration: "none" }}>View All →</a>
+      </div>
+
+      <div className={styles.activityGrid}>
+        <div className={styles.activityCard}>
+          <div className={styles.activityCardLabel}>Completion</div>
+          <div className={styles.activityCardValue} style={{ color: completion_pct >= 70 ? "#34D399" : completion_pct >= 40 ? "#F59E0B" : "#F87171" }}>
+            {completion_pct.toFixed(0)}%
+          </div>
+          <div className={styles.activityPercBar}>
+            <div className={styles.activityPercFill} style={{ width: `${completion_pct}%` }} />
+          </div>
+          <div className={styles.activityCardSub}>{completed} of {total} tasks done</div>
+        </div>
+
+        <div className={styles.activityCard}>
+          <div className={styles.activityCardLabel}>In Progress</div>
+          <div className={styles.activityCardValue} style={{ color: "#4A9EFF" }}>{in_progress}</div>
+          <div className={styles.activityCardSub}>tasks active now</div>
+        </div>
+
+        <div className={styles.activityCard}>
+          <div className={styles.activityCardLabel}>Pending</div>
+          <div className={styles.activityCardValue} style={{ color: "#A78BFA" }}>{pending}</div>
+          <div className={styles.activityCardSub}>not started yet</div>
         </div>
       </div>
     </div>

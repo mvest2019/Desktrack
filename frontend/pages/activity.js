@@ -225,6 +225,9 @@ export default function ActivityPage() {
             <Link className={`${styles.navItem} ${styles.active}`} href="/activity">
               <span>🖥</span> Activity
             </Link>
+            <Link className={styles.navItem} href="/tasks">
+              <span>✅</span> My Tasks
+            </Link>
             <Link className={styles.navItem} href="/profile">
               <span>👤</span> Profile
             </Link>

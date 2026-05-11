@@ -117,6 +117,7 @@ export default function ProfilePage() {
             <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
             <Link className={styles.navItem} href="/screenshots"><span>📷</span> Screenshots</Link>
             <Link className={styles.navItem} href="/activity"><span>🖥</span> Activity</Link>
+            <Link className={styles.navItem} href="/tasks"><span>✅</span> My Tasks</Link>
             <Link className={`${styles.navItem} ${styles.active}`} href="/profile"><span>👤</span> Profile</Link>
             {user.user_type === "admin" && (
               <Link className={styles.navItem} href="/admin"><span>🛡</span> Admin Portal</Link>

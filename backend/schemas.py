@@ -154,3 +154,112 @@ class AdminUserItem(BaseModel):
 class AdminUsersResponse(BaseModel):
     count: int
     users: List[AdminUserItem]
+
+
+# ── Task schemas ─────────────────────────────────────────────
+
+class TaskCreateRequest(BaseModel):
+    user_id:                  int
+    title:                    str
+    description:              Optional[str] = None
+    priority:                 Optional[str] = "medium"   # low / medium / high
+    expected_completion_time: Optional[str] = None       # free text: "by 3pm", "2h"
+    notes:                    Optional[str] = None       # optional first note on creation
+
+class TaskEditRequest(BaseModel):
+    user_id:                  int
+    title:                    Optional[str] = None
+    description:              Optional[str] = None
+    priority:                 Optional[str] = None
+    expected_completion_time: Optional[str] = None
+
+class TaskStatusUpdateRequest(BaseModel):
+    user_id: int
+    status:  str   # pending / in_progress / completed
+
+class TaskNoteCreateRequest(BaseModel):
+    user_id: int
+    note:    str
+
+class TaskNoteItem(BaseModel):
+    id:         int
+    note:       str
+    created_at: str
+
+class TaskItem(BaseModel):
+    id:                       int
+    user_id:                  int
+    title:                    str
+    description:              Optional[str]
+    priority:                 str
+    status:                   str
+    expected_completion_time: Optional[str]
+    task_date:                str
+    completed_at:             Optional[str]
+    created_at:               str
+    updated_at:               str
+    notes:                    List[TaskNoteItem]
+
+class TaskSummary(BaseModel):
+    total:          int
+    pending:        int
+    in_progress:    int
+    completed:      int
+    completion_pct: float
+
+class TaskListResponse(BaseModel):
+    success:  bool
+    user_id:  int
+    date:     str
+    count:    int
+    tasks:    List[TaskItem]
+
+class TaskSummaryResponse(BaseModel):
+    success:        bool
+    user_id:        int
+    date:           str
+    total:          int
+    pending:        int
+    in_progress:    int
+    completed:      int
+    completion_pct: float
+
+class AdminTaskItem(BaseModel):
+    task_id:                  int
+    user_id:                  int
+    username:                 str
+    project:                  Optional[str]
+    title:                    str
+    priority:                 str
+    status:                   str
+    expected_completion_time: Optional[str]
+    task_date:                str
+    completed_at:             Optional[str]
+    created_at:               str
+    note_count:               int
+
+class AdminTaskListResponse(BaseModel):
+    success: bool
+    date:    str
+    count:   int
+    tasks:   List[AdminTaskItem]
+
+class AdminTaskUserStat(BaseModel):
+    user_id:        int
+    username:       str
+    project:        Optional[str]
+    total:          int
+    completed:      int
+    in_progress:    int
+    pending:        int
+    completion_pct: float
+
+class AdminTaskStatsResponse(BaseModel):
+    success:        bool
+    date:           str
+    total_tasks:    int
+    completed:      int
+    in_progress:    int
+    pending:        int
+    completion_pct: float
+    by_employee:    List[AdminTaskUserStat]

@@ -78,17 +78,19 @@ export default function AdminPortal() {
     setSelected(user);
     setMemberData(null);
     try {
-      const [statsRes, screensRes, actRes, appRes] = await Promise.all([
+      const [statsRes, screensRes, actRes, appRes, taskSumRes] = await Promise.all([
         fetch(`${API}/api/stats/${user.user_id}`),
         fetch(`${API}/api/screenshots/${user.user_id}?limit=8`),
         fetch(`${API}/api/activity/${user.user_id}?limit=14`),
         fetch(`${API}/api/applogs/${user.user_id}/summary`),
+        fetch(`${API}/api/tasks/${user.user_id}/summary`),
       ]);
-      const stats      = statsRes.ok   ? await statsRes.json()   : {};
-      const screensData= screensRes.ok ? await screensRes.json() : { screenshots: [] };
-      const activity   = actRes.ok     ? await actRes.json()     : null;
-      const appSummary = appRes.ok     ? await appRes.json()     : null;
-      setMemberData({ stats, screenshots: screensData.screenshots || [], activity, appSummary });
+      const stats       = statsRes.ok    ? await statsRes.json()    : {};
+      const screensData = screensRes.ok  ? await screensRes.json()  : { screenshots: [] };
+      const activity    = actRes.ok      ? await actRes.json()      : null;
+      const appSummary  = appRes.ok      ? await appRes.json()      : null;
+      const taskSummary = taskSumRes.ok  ? await taskSumRes.json()  : null;
+      setMemberData({ stats, screenshots: screensData.screenshots || [], activity, appSummary, taskSummary });
     } catch (_) {}
   }
 
@@ -139,9 +141,12 @@ export default function AdminPortal() {
             <span className={styles.logoText}>Syntra</span>
           </div>
           <nav className={styles.nav}>
-            <span className={`${styles.navItem} ${styles.active}`}>
-              <span>🛡</span> Admin Portal
-            </span>
+            <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
+            <Link className={styles.navItem} href="/screenshots"><span>📷</span> Screenshots</Link>
+            <Link className={styles.navItem} href="/activity"><span>🖥</span> Activity</Link>
+            <Link className={styles.navItem} href="/tasks"><span>✅</span> My Tasks</Link>
+            <Link className={`${styles.navItem} ${styles.active}`} href="/admin"><span>🛡</span> Admin Portal</Link>
+            <Link className={styles.navItem} href="/admin-tasks"><span>📋</span> Task Overview</Link>
           </nav>
           <div className={styles.sidebarFooter}>
             <div className={styles.userBadge}>
@@ -339,6 +344,53 @@ export default function AdminPortal() {
                                   <span className={styles.appTime}>{fmtSec(a.total_sec)}</span>
                                 </div>
                               ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Task summary */}
+                        {memberData.taskSummary && memberData.taskSummary.total > 0 && (
+                          <div className={styles.section}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                              <p className={styles.subTitle} style={{ margin: 0 }}>Today&apos;s Tasks</p>
+                              <Link href={`/admin-tasks?user_id=${selected.user_id}`} style={{ fontSize: 11, color: "#4A9EFF", textDecoration: "none" }}>
+                                View All →
+                              </Link>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                              <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>{memberData.taskSummary.total}</div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Total</div>
+                              </div>
+                              <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: "#34D399" }}>{memberData.taskSummary.completed}</div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Done</div>
+                              </div>
+                              <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: "#4A9EFF" }}>{memberData.taskSummary.in_progress}</div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Active</div>
+                              </div>
+                              <div style={{ flex: 1, background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.45)" }}>{memberData.taskSummary.pending}</div>
+                                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>Pending</div>
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <div style={{ flex: 1, height: 5, background: "rgba(255,255,255,0.08)", borderRadius: 3 }}>
+                                <div style={{
+                                  width: `${memberData.taskSummary.completion_pct}%`,
+                                  height: "100%", borderRadius: 3,
+                                  background: memberData.taskSummary.completion_pct >= 70 ? "#34D399"
+                                            : memberData.taskSummary.completion_pct >= 40 ? "#F59E0B" : "#F87171"
+                                }} />
+                              </div>
+                              <span style={{
+                                fontSize: 12, fontWeight: 600, minWidth: 36,
+                                color: memberData.taskSummary.completion_pct >= 70 ? "#34D399"
+                                     : memberData.taskSummary.completion_pct >= 40 ? "#F59E0B" : "#F87171"
+                              }}>
+                                {memberData.taskSummary.completion_pct.toFixed(0)}%
+                              </span>
                             </div>
                           </div>
                         )}
