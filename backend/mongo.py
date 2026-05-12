@@ -22,9 +22,9 @@ raw_samples_collection = mongo_db["raw_samples"]
 def create_indexes():
     try:
         raw_samples_collection.create_index([("user_id", DESCENDING)], unique=True)
-        print("✅ MongoDB indexes created")
+        print("MongoDB indexes created")
     except Exception as e:
-        print(f"⚠ MongoDB index warning: {e}")
+        print(f"MongoDB index warning: {e}")
 
 create_indexes()
 

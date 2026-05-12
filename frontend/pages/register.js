@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const [userType,    setUserType]    = useState("user");
   const [project,     setProject]     = useState("");
   const [designation, setDesignation] = useState("");
+  const [skills,      setSkills]      = useState("");
   const [error,       setError]       = useState("");
   const [loading,     setLoading]     = useState(false);
 
@@ -35,13 +36,13 @@ export default function RegisterPage() {
       const res  = await fetch(`${API}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password, user_type: userType, project, designation }),
+        body: JSON.stringify({ username, email, password, user_type: userType, project, designation, skills }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
         localStorage.setItem("user", JSON.stringify({
           user_id: data.user_id, username, email,
-          user_type: userType, project, designation,
+          user_type: userType, project, designation, skills,
         }));
         router.push("/dashboard");
       } else {
@@ -158,6 +159,17 @@ export default function RegisterPage() {
                   <input type="text" className={styles.input}
                     placeholder="e.g. Frontend Dev, Marketing"
                     value={designation} onChange={(e) => setDesignation(e.target.value)}
+                    disabled={loading} />
+                </div>
+              </div>
+
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Skills</label>
+                <div className={styles.inputWrap}>
+                  <span className={styles.inputIcon}>⚡</span>
+                  <input type="text" className={styles.input}
+                    placeholder="e.g. Python, React, UI/UX"
+                    value={skills} onChange={(e) => setSkills(e.target.value)}
                     disabled={loading} />
                 </div>
               </div>

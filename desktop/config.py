@@ -28,6 +28,7 @@ else:
 
 # ── Defaults ────────────────────────────────────────────────
 STAGING_API_URL     = "http://69.62.76.202:8000"  # production server
+STAGING_WEBSITE_URL = "http://localhost:3000"      # production website (update before build)
 SCREENSHOT_INTERVAL = 180                          # seconds (3 minutes)
 
 
@@ -51,6 +52,8 @@ def _load_config_file() -> dict:
 
     if parser.has_option(section, "api_url"):
         result["api_url"] = parser.get(section, "api_url").rstrip("/")
+    if parser.has_option(section, "website_url"):
+        result["website_url"] = parser.get(section, "website_url").rstrip("/")
     if parser.has_option(section, "screenshot_interval"):
         result["screenshot_interval"] = int(parser.get(section, "screenshot_interval"))
 

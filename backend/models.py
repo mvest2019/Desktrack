@@ -24,6 +24,7 @@ class User(Base):
     user_type   = Column(String(20), nullable=False, default="user")  # "admin" or "user"
     project     = Column(String(50), nullable=True)   # "Bold" or "MView"
     designation = Column(String(100), nullable=True)  # e.g. "Frontend Dev", "Marketing"
+    skills      = Column(String(500), nullable=True)  # comma-separated, e.g. "Python, React"
     isactive    = Column(Boolean, default=True)
     created_at  = Column(DateTime, default=datetime.utcnow)
 

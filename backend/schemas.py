@@ -15,6 +15,7 @@ class LoginResponse(BaseModel):
     user_type: str           # "admin" or "user"
     project: Optional[str]   # "Bold" or "MView"
     designation: Optional[str]
+    skills: Optional[str]
     message: str
 
 class RegisterRequest(BaseModel):
@@ -24,6 +25,7 @@ class RegisterRequest(BaseModel):
     user_type: Optional[str] = "user"    # "admin" or "user"
     project: Optional[str] = None        # "Bold" or "MView"
     designation: Optional[str] = None    # e.g. "Frontend Dev", "Marketing"
+    skills: Optional[str] = None         # comma-separated, e.g. "Python, React"
 
 class RegisterResponse(BaseModel):
     success: bool
@@ -130,6 +132,7 @@ class UserProfileResponse(BaseModel):
     user_type:   str
     project:     Optional[str]
     designation: Optional[str]
+    skills:      Optional[str]
     isactive:    bool
     created_at:  str
 
@@ -137,6 +140,7 @@ class UserProfileUpdateRequest(BaseModel):
     username:    Optional[str] = None
     designation: Optional[str] = None
     project:     Optional[str] = None  # "Bold" or "MView"
+    skills:      Optional[str] = None
 
 
 # ── Admin schemas ────────────────────────────────────────────
@@ -148,6 +152,7 @@ class AdminUserItem(BaseModel):
     user_type:   str
     project:     Optional[str]
     designation: Optional[str]
+    skills:      Optional[str]
     isactive:    bool
     created_at:  str
 

@@ -157,6 +157,21 @@ class LoginWindow(ctk.CTk):
         entry.pack(side="left", fill="both", expand=True, padx=(4, 10))
         return entry
 
+    def _make_dropdown_row(self, parent, icon, var, values):
+        row = ctk.CTkFrame(parent, fg_color="#F8FAFC", corner_radius=10,
+                           border_color="#E2E8F0", border_width=1, height=50)
+        row.pack(fill="x", pady=(4, 0))
+        row.pack_propagate(False)
+        ctk.CTkLabel(row, text=icon, font=ctk.CTkFont(size=15),
+                     text_color="#94A3B8", width=40).pack(side="left", padx=(10, 0))
+        menu = ctk.CTkOptionMenu(row, variable=var, values=values,
+                                 font=ctk.CTkFont(size=13),
+                                 fg_color="#F8FAFC", button_color="#E2E8F0",
+                                 button_hover_color="#CBD5E1", text_color="#0F172A",
+                                 dropdown_fg_color="#FFFFFF", dropdown_text_color="#0F172A")
+        menu.pack(side="left", fill="both", expand=True, padx=(4, 10))
+        return menu
+
     def _build_ui(self):
         """Create both Sign In and Create Account views inside the same window."""
         self.configure(fg_color="#FFFFFF")
@@ -230,43 +245,73 @@ class LoginWindow(ctk.CTk):
 
         ctk.CTkLabel(self._reg_frame, text="Create your account",
                      font=ctk.CTkFont(size=13),
-                     text_color="#64748B").pack(pady=(4, 20), padx=44)
+                     text_color="#64748B").pack(pady=(4, 12), padx=44)
 
-        reg_inner = ctk.CTkFrame(self._reg_frame, fg_color="transparent")
-        reg_inner.pack(fill="both", expand=True, padx=44)
+        reg_scroll = ctk.CTkScrollableFrame(self._reg_frame, fg_color="transparent",
+                                            scrollbar_button_color="#E2E8F0",
+                                            scrollbar_button_hover_color="#CBD5E1")
+        reg_scroll.pack(fill="both", expand=True, padx=44)
 
-        ctk.CTkLabel(reg_inner, text="Full Name", anchor="w",
+        ctk.CTkLabel(reg_scroll, text="Full Name", anchor="w",
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color="#475569").pack(fill="x")
         self.reg_name_var = tk.StringVar()
-        self._make_field_row(reg_inner, "👤", self.reg_name_var, "Your name")
+        self._make_field_row(reg_scroll, "👤", self.reg_name_var, "Your name")
 
-        ctk.CTkLabel(reg_inner, text="Email Address", anchor="w",
+        ctk.CTkLabel(reg_scroll, text="Email Address", anchor="w",
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color="#475569").pack(fill="x", pady=(12, 0))
         self.reg_email_var = tk.StringVar()
-        self._make_field_row(reg_inner, "✉", self.reg_email_var, "you@example.com")
+        self._make_field_row(reg_scroll, "✉", self.reg_email_var, "you@example.com")
 
-        ctk.CTkLabel(reg_inner, text="Password", anchor="w",
+        ctk.CTkLabel(reg_scroll, text="Password", anchor="w",
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color="#475569").pack(fill="x", pady=(12, 0))
         self.reg_pass_var = tk.StringVar()
-        self._make_field_row(reg_inner, "🔒", self.reg_pass_var, "Min 6 characters", show="•")
+        self._make_field_row(reg_scroll, "🔒", self.reg_pass_var, "Min 6 characters", show="•")
+
+        ctk.CTkLabel(reg_scroll, text="Account Type", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
+        self.reg_user_type_var = tk.StringVar(value="Employee (User)")
+        self._make_dropdown_row(reg_scroll, "🛡", self.reg_user_type_var,
+                                ["Employee (User)", "Admin"])
+
+        ctk.CTkLabel(reg_scroll, text="Project", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
+        self.reg_project_var = tk.StringVar(value="Select project...")
+        self._make_dropdown_row(reg_scroll, "🌐", self.reg_project_var,
+                                ["Select project...", "Bold", "MView"])
+
+        ctk.CTkLabel(reg_scroll, text="Designation", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
+        self.reg_designation_var = tk.StringVar()
+        self._make_field_row(reg_scroll, "💼", self.reg_designation_var,
+                             "e.g. Frontend Dev, Marketing")
+
+        ctk.CTkLabel(reg_scroll, text="Skills", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
+        self.reg_skills_var = tk.StringVar()
+        self._make_field_row(reg_scroll, "⚡", self.reg_skills_var,
+                             "e.g. Python, React, UI/UX")
 
         self.reg_error_var = tk.StringVar(value="")
-        ctk.CTkLabel(reg_inner, textvariable=self.reg_error_var,
+        ctk.CTkLabel(reg_scroll, textvariable=self.reg_error_var,
                      text_color="#DC2626", font=ctk.CTkFont(size=12),
-                     wraplength=360).pack(pady=(8, 0))
+                     wraplength=320).pack(pady=(8, 0))
 
         self.reg_btn = ctk.CTkButton(
-            reg_inner, text="Create Account  →", height=50,
+            reg_scroll, text="Create Account  →", height=50,
             font=ctk.CTkFont(size=14, weight="bold"),
             fg_color="#4F63D2", hover_color="#4050C0",
             corner_radius=12, command=self._on_register_click,
         )
         self.reg_btn.pack(fill="x", pady=(12, 0))
 
-        foot2 = ctk.CTkFrame(reg_inner, fg_color="transparent")
+        foot2 = ctk.CTkFrame(reg_scroll, fg_color="transparent")
         foot2.pack(pady=(10, 0))
         ctk.CTkLabel(foot2, text="Already have an account? ",
                      font=ctk.CTkFont(size=12), text_color="#64748B").pack(side="left")
@@ -285,6 +330,10 @@ class LoginWindow(ctk.CTk):
         self.reg_name_var.set("")
         self.reg_email_var.set("")
         self.reg_pass_var.set("")
+        self.reg_user_type_var.set("Employee (User)")
+        self.reg_project_var.set("Select project...")
+        self.reg_designation_var.set("")
+        self.reg_skills_var.set("")
         self.reg_error_var.set("")
         self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4F63D2")
         self.unbind("<Return>")
@@ -364,11 +413,20 @@ class LoginWindow(ctk.CTk):
 
     # ── Registration (inline) ─────────────────────────────
     def _on_register_click(self):
-        name     = self.reg_name_var.get().strip()
-        email    = self.reg_email_var.get().strip()
-        password = self.reg_pass_var.get().strip()
+        name        = self.reg_name_var.get().strip()
+        email       = self.reg_email_var.get().strip()
+        password    = self.reg_pass_var.get().strip()
+        user_type   = "admin" if self.reg_user_type_var.get() == "Admin" else "user"
+        project_sel = self.reg_project_var.get()
+        project     = project_sel if project_sel in ("Bold", "MView") else None
+        designation = self.reg_designation_var.get().strip()
+        skills      = self.reg_skills_var.get().strip()
+
         if not name or not email or not password:
-            self.reg_error_var.set("⚠  Please fill in all fields.")
+            self.reg_error_var.set("⚠  Please fill in Name, Email and Password.")
+            return
+        if not project:
+            self.reg_error_var.set("⚠  Please select a project.")
             return
         if len(password) < 6:
             self.reg_error_var.set("⚠  Password must be at least 6 characters.")
@@ -376,12 +434,15 @@ class LoginWindow(ctk.CTk):
         self.reg_btn.configure(text="Creating...", state="disabled")
         self.reg_error_var.set("")
         threading.Thread(target=self._do_register,
-                         args=(name, email, password), daemon=True).start()
+                         args=(name, email, password, user_type, project, designation, skills),
+                         daemon=True).start()
 
-    def _do_register(self, name, email, password):
+    def _do_register(self, name, email, password, user_type, project, designation, skills):
         try:
             res = requests.post(f"{API_URL}/api/register",
-                                json={"username": name, "email": email, "password": password},
+                                json={"username": name, "email": email, "password": password,
+                                      "user_type": user_type, "project": project,
+                                      "designation": designation, "skills": skills},
                                 timeout=10)
             data = res.json()
             if res.ok and data.get("success"):

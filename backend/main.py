@@ -129,6 +129,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         user_type=request.user_type if request.user_type in ("admin", "user") else "user",
         project=request.project if request.project in ("Bold", "MView") else None,
         designation=request.designation,
+        skills=request.skills,
         isactive=True,
     )
     db.add(user)
@@ -190,6 +191,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         user_type=user.user_type,
         project=user.project,
         designation=user.designation,
+        skills=user.skills,
         message="Login successful",
     )
 
@@ -561,6 +563,7 @@ def get_profile(user_id: int, db: Session = Depends(get_db)):
         user_type=user.user_type,
         project=user.project,
         designation=user.designation,
+        skills=user.skills,
         isactive=user.isactive,
         created_at=user.created_at.isoformat(),
     )
@@ -568,7 +571,7 @@ def get_profile(user_id: int, db: Session = Depends(get_db)):
 
 @app.patch("/api/users/{user_id}/profile", response_model=UserProfileResponse, tags=["Profile"])
 def update_profile(user_id: int, request: UserProfileUpdateRequest, db: Session = Depends(get_db)):
-    """Update username, designation, or project for a user."""
+    """Update username, designation, project, or skills for a user."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -581,6 +584,8 @@ def update_profile(user_id: int, request: UserProfileUpdateRequest, db: Session 
         if request.project not in ("Bold", "MView"):
             raise HTTPException(status_code=400, detail="project must be 'Bold' or 'MView'")
         user.project = request.project
+    if request.skills is not None:
+        user.skills = request.skills
 
     db.commit()
     db.refresh(user)
@@ -592,6 +597,7 @@ def update_profile(user_id: int, request: UserProfileUpdateRequest, db: Session 
         user_type=user.user_type,
         project=user.project,
         designation=user.designation,
+        skills=user.skills,
         isactive=user.isactive,
         created_at=user.created_at.isoformat(),
     )
@@ -622,6 +628,7 @@ def admin_list_users(admin_id: int, db: Session = Depends(get_db)):
                 user_type=u.user_type,
                 project=u.project,
                 designation=u.designation,
+                skills=u.skills,
                 isactive=u.isactive,
                 created_at=u.created_at.isoformat(),
             )

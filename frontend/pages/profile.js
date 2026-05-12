@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [editUsername, setEditUsername]       = useState("");
   const [editDesignation, setEditDesignation] = useState("");
   const [editProject, setEditProject]         = useState("");
+  const [editSkills, setEditSkills]           = useState("");
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -44,6 +45,7 @@ export default function ProfilePage() {
     setEditUsername(profile?.username || "");
     setEditDesignation(profile?.designation || "");
     setEditProject(profile?.project || "");
+    setEditSkills(profile?.skills || "");
     setSuccessMsg("");
     setErrorMsg("");
     setEditing(true);
@@ -68,6 +70,7 @@ export default function ProfilePage() {
           username: editUsername.trim(),
           designation: editDesignation.trim() || null,
           project: editProject || null,
+          skills: editSkills.trim() || null,
         }),
       });
       const data = await res.json();
@@ -191,6 +194,13 @@ export default function ProfilePage() {
                   </div>
 
                   <div className={styles.fieldItem}>
+                    <span className={styles.fieldLabel}>Skills</span>
+                    {profile.skills
+                      ? <span className={styles.fieldValue}>{profile.skills}</span>
+                      : <span className={styles.fieldEmpty}>Not set</span>}
+                  </div>
+
+                  <div className={styles.fieldItem}>
                     <span className={styles.fieldLabel}>Member Since</span>
                     <span className={styles.fieldValue}>{formatDate(profile.created_at)}</span>
                   </div>
@@ -250,6 +260,18 @@ export default function ProfilePage() {
                       value={editDesignation}
                       onChange={(e) => setEditDesignation(e.target.value)}
                       placeholder="e.g. Frontend Dev, Marketing"
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div className={styles.formField}>
+                    <label className={styles.formLabel}>Skills</label>
+                    <input
+                      className={styles.formInput}
+                      type="text"
+                      value={editSkills}
+                      onChange={(e) => setEditSkills(e.target.value)}
+                      placeholder="e.g. Python, React, UI/UX"
                       disabled={loading}
                     />
                   </div>
