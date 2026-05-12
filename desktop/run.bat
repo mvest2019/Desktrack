@@ -1,10 +1,10 @@
 @echo off
-title Syntra — Desktop App
+title Realisieren Pulse — Desktop App
 cd /d "%~dp0"
 
 echo.
 echo  ==========================================
-echo   Syntra Desktop App  [Dev Mode]
+echo   Realisieren Pulse Desktop App  [Dev Mode]
 echo  ==========================================
 echo.
 

@@ -32,7 +32,7 @@ Start-Process powershell -ArgumentList `
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Syntra LAN Server started!" -ForegroundColor Cyan
+Write-Host "  Realisieren Pulse LAN Server started!" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Your LAN IP : $lanIp" -ForegroundColor Yellow
 Write-Host "  Frontend    : http://${lanIp}:3000" -ForegroundColor Green

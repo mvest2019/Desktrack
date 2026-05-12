@@ -11,22 +11,22 @@
 ;   2. Open Inno Setup Compiler
 ;   3. File → Open → select this installer.iss file
 ;   4. Build → Compile
-;   5. Output:  desktop/installer_output/SyntraSetup.exe
+;   5. Output:  desktop/installer_output/Realisieren PulseSetup.exe
 ;
 ; What this installer does for the user:
 ;   - Shows a professional "Next → Next → Install" wizard
-;   - Copies Syntra.exe to:  C:\Program Files\Syntra\
+;   - Copies Realisieren Pulse.exe to:  C:\Program Files\Realisieren Pulse\
 ;   - Adds a Start Menu shortcut
 ;   - Adds a Desktop shortcut
 ;   - Adds entry to "Add or Remove Programs" (so they can uninstall)
-;   - Optionally starts Syntra after install
+;   - Optionally starts Realisieren Pulse after install
 ; =============================================================
 
-#define MyAppName      "Syntra"
+#define MyAppName      "Realisieren Pulse"
 #define MyAppVersion   "1.0.0"
 #define MyAppPublisher "Your Company Name"
 #define MyAppURL       "http://108.181.168.43"
-#define MyAppExeName   "Syntra.exe"
+#define MyAppExeName   "RealisierenPulse.exe"
 #define MyAppDescription "Real-time work sync and activity tracker"
 
 [Setup]
@@ -46,7 +46,7 @@ DefaultGroupName={#MyAppName}
 
 ; ── Output ───────────────────────────────────────────────────
 OutputDir=installer_output
-OutputBaseFilename=SyntraSetup
+OutputBaseFilename=RealisierenPulseSetup
 SetupIconFile=assets\icon.ico
 
 ; ── Compression ──────────────────────────────────────────────

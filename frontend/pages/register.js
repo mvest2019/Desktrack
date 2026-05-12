@@ -70,7 +70,7 @@ export default function RegisterPage() {
 
   return (
     <>
-      <Head><title>Syntra — Register</title></Head>
+      <Head><title>Realisieren Pulse — Register</title></Head>
       <div className={styles.page}>
         <div className={styles.blob1} />
         <div className={styles.blob2} />
@@ -84,7 +84,7 @@ export default function RegisterPage() {
               <span className={styles.icon} style={{ fontSize: 22 }}>⚡</span>
             </div>
             <h1 className={styles.title} style={{ fontSize: 22, marginBottom: 4 }}>Create Account</h1>
-            <p className={styles.subtitle}>Join Syntra today</p>
+            <p className={styles.subtitle}>Join Realisieren Pulse today</p>
           </div>
 
           <form onSubmit={handleRegister} className={styles.form} style={{ gap: 12 }}>

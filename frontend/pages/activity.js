@@ -205,14 +205,14 @@ export default function ActivityPage() {
 
   return (
     <>
-      <Head><title>Syntra — Activity</title></Head>
+      <Head><title>Realisieren Pulse — Activity</title></Head>
       <div className={styles.page}>
 
         {/* ── Sidebar ─────────────────────────────────── */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
-            <span className={styles.logoText}>Syntra</span>
+            <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
+            <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
 
           <nav className={styles.nav}>

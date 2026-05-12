@@ -104,15 +104,15 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Syntra — Dashboard</title>
+        <title>Realisieren Pulse — Dashboard</title>
       </Head>
 
       <div className={styles.page}>
         {/* ── Sidebar ─────────────────────────────────── */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
-            <span className={styles.logoText}>Syntra</span>
+            <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
+            <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
 
           <nav className={styles.nav}>
@@ -267,7 +267,7 @@ export default function Dashboard() {
                 Welcome back, {user?.username?.split(" ")[0]} 👋
               </div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
-                Syntra is tracking your activity
+                Realisieren Pulse is tracking your activity
               </div>
             </div>
             <button onClick={() => setShowWelcome(false)} style={{

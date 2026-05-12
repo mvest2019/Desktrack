@@ -103,14 +103,14 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Head><title>Syntra — Profile</title></Head>
+      <Head><title>Realisieren Pulse — Profile</title></Head>
       <div className={styles.page}>
 
         {/* ── Sidebar ─────────────────────────────────── */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
-            <span className={styles.logoText}>Syntra</span>
+            <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
+            <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
 
           <nav className={styles.nav}>
@@ -234,11 +234,11 @@ export default function ProfilePage() {
                       value={editProject}
                       onChange={(e) => setEditProject(e.target.value)}
                       disabled={loading}
-                      style={{ cursor: "pointer" }}
+                      style={{ cursor: "pointer", background: "#1e2436", color: "#ffffff" }}
                     >
-                      <option value="">Select project...</option>
-                      <option value="Bold">Bold</option>
-                      <option value="MView">MView</option>
+                      <option value=""   style={{ background: "#1e2436", color: "#ffffff" }}>Select project...</option>
+                      <option value="Bold"  style={{ background: "#1e2436", color: "#ffffff" }}>Bold</option>
+                      <option value="MView" style={{ background: "#1e2436", color: "#ffffff" }}>MView</option>
                     </select>
                   </div>
 

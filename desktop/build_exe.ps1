@@ -1,5 +1,5 @@
 # =============================================================
-# build_exe.ps1  — One-click EXE builder for Syntra desktop app
+# build_exe.ps1  — One-click EXE builder for Realisieren Pulse desktop app
 # =============================================================
 # Run this from the desktop\ folder:
 #   cd desktop
@@ -8,10 +8,10 @@
 # What it does:
 #   1. Checks that PyInstaller is installed
 #   2. Cleans old build artifacts
-#   3. Runs PyInstaller with our syntra.spec
+#   3. Runs PyInstaller with our realisieren-pulse.spec
 #   4. Tells you where the EXE is
 #
-# The resulting EXE is:  desktop\dist\Syntra.exe
+# The resulting EXE is:  desktop\dist\RealisierenPulse.exe
 # =============================================================
 
 Set-StrictMode -Version Latest
@@ -19,7 +19,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Syntra EXE Builder" -ForegroundColor Cyan
+Write-Host "  Realisieren Pulse EXE Builder" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -42,12 +42,11 @@ pip install `
     pyinstaller
 Write-Host "      All packages installed." -ForegroundColor Green
 
-# ── Step 3: Convert PNG icon → ICO (syntra.spec and installer.iss need .ico) ─
+# ── Step 3: Convert PNG icon → ICO (realisieren-pulse.spec and installer.iss need .ico) ─
 Write-Host "[3/5] Converting PNG icon to ICO format..." -ForegroundColor Green
 if (-not (Test-Path "assets")) { New-Item -ItemType Directory -Path "assets" | Out-Null }
 $pngSource = "..\imgs\app_icon.png"
 $icoTarget = "assets\icon.ico"
-$iconReady = $false
 if (Test-Path $pngSource) {
     # Temporarily allow errors so we can check $LASTEXITCODE ourselves
     $prev = $ErrorActionPreference
@@ -56,7 +55,6 @@ if (Test-Path $pngSource) {
     $ErrorActionPreference = $prev
     if ($LASTEXITCODE -eq 0 -and (Test-Path $icoTarget)) {
         Write-Host "      Icon created: $icoTarget" -ForegroundColor Green
-        $iconReady = $true
     } else {
         Write-Host "      WARNING: Icon conversion failed (Pillow not installed?)." -ForegroundColor Yellow
         Write-Host "      Run: pip install 'Pillow>=11.0.0'  then re-run this script." -ForegroundColor Yellow
@@ -76,10 +74,10 @@ Write-Host "      Cleaned." -ForegroundColor Green
 Write-Host "[5/5] Building EXE with PyInstaller..." -ForegroundColor Green
 Write-Host ""
 
-pyinstaller syntra.spec
+pyinstaller realisieren-pulse.spec
 
 Write-Host ""
-if (-not (Test-Path "dist\Syntra.exe")) {
+if (-not (Test-Path "dist\RealisierenPulse.exe")) {
     Write-Host "========================================" -ForegroundColor Red
     Write-Host "  BUILD FAILED! Check errors above." -ForegroundColor Red
     Write-Host "========================================" -ForegroundColor Red
@@ -90,7 +88,7 @@ if (-not (Test-Path "dist\Syntra.exe")) {
 Copy-Item "config.ini" "dist\config.ini" -Force
 Write-Host "      config.ini copied to dist\" -ForegroundColor Green
 
-$exePath = Resolve-Path "dist\Syntra.exe"
+$exePath = Resolve-Path "dist\RealisierenPulse.exe"
 $exeSize = [math]::Round((Get-Item $exePath).Length / 1MB, 1)
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "  EXE BUILD SUCCESSFUL! ($exeSize MB)" -ForegroundColor Green
@@ -108,8 +106,8 @@ if (-not (Test-Path $iscc)) {
 if (Test-Path $iscc) {
     if (Test-Path "installer_output") { Remove-Item "installer_output" -Recurse -Force }
     & $iscc "installer.iss"
-    if (Test-Path "installer_output\SyntraSetup.exe") {
-        $setupPath = Resolve-Path "installer_output\SyntraSetup.exe"
+    if (Test-Path "installer_output\RealisierenPulseSetup.exe") {
+        $setupPath = Resolve-Path "installer_output\RealisierenPulseSetup.exe"
         $setupSize = [math]::Round((Get-Item $setupPath).Length / 1MB, 1)
         Write-Host ""
         Write-Host "========================================" -ForegroundColor Green

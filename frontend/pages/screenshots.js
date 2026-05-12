@@ -150,14 +150,14 @@ export default function ScreenshotsPage() {
 
   return (
     <>
-      <Head><title>Screenshots — Syntra</title></Head>
+      <Head><title>Screenshots — Realisieren Pulse</title></Head>
       <div className={styles.page}>
 
         {/* ── Sidebar ──────────────────────────────── */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
-            <span className={styles.logoText}>Syntra</span>
+            <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
+            <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
             <Link href="/dashboard" className={styles.navItem}><span>📊</span> Dashboard</Link>

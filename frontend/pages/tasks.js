@@ -67,11 +67,16 @@ export default function TasksPage() {
   const [noteInputs,  setNoteInputs]  = useState({});
   const [editingId,   setEditingId]   = useState(null);
   const [editForm,    setEditForm]    = useState({});
+  const [updatingId,  setUpdatingId]  = useState(null);
 
   const [form, setForm] = useState({
     title: "", description: "", priority: "medium",
     expected_completion_time: "", notes: "",
   });
+  const [durNum,  setDurNum]  = useState("");
+  const [durUnit, setDurUnit] = useState("hr");
+  const [editDurNum,  setEditDurNum]  = useState("");
+  const [editDurUnit, setEditDurUnit] = useState("hr");
 
   // Close calendar on outside click
   useEffect(() => {
@@ -113,14 +118,16 @@ export default function TasksPage() {
     e.preventDefault();
     if (!form.title.trim()) return;
     setSubmitting(true);
+    const ect = durNum.trim() ? `${durNum.trim()} ${durUnit}` : "";
     try {
       const res = await fetch(`${API}/api/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.user_id, ...form }),
+        body: JSON.stringify({ user_id: user.user_id, ...form, expected_completion_time: ect }),
       });
       if (res.ok) {
         setForm({ title: "", description: "", priority: "medium", expected_completion_time: "", notes: "" });
+        setDurNum(""); setDurUnit("hr");
         setShowForm(false);
         fetchAll(user.user_id, dateFilter);
       }
@@ -130,14 +137,16 @@ export default function TasksPage() {
 
   // ── Status change ────────────────────────────────────────
   async function changeStatus(taskId, status) {
+    setUpdatingId(taskId);
     try {
-      await fetch(`${API}/api/tasks/${taskId}/status`, {
+      const res = await fetch(`${API}/api/tasks/${taskId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.user_id, status }),
       });
-      fetchAll(user.user_id, dateFilter);
+      if (res.ok) await fetchAll(user.user_id, dateFilter);
     } catch (_) {}
+    finally { setUpdatingId(null); }
   }
 
   // ── Delete task ──────────────────────────────────────────
@@ -168,13 +177,17 @@ export default function TasksPage() {
   function startEdit(task) {
     setEditingId(task.id);
     setEditForm({ title: task.title, description: task.description || "", priority: task.priority, expected_completion_time: task.expected_completion_time || "" });
+    const parts = (task.expected_completion_time || "").trim().split(" ");
+    setEditDurNum(parts[0] && !isNaN(parts[0]) ? parts[0] : "");
+    setEditDurUnit(parts[1] || "hr");
   }
   async function saveEdit(taskId) {
+    const ect = editDurNum.trim() ? `${editDurNum.trim()} ${editDurUnit}` : "";
     try {
       await fetch(`${API}/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.user_id, ...editForm }),
+        body: JSON.stringify({ user_id: user.user_id, ...editForm, expected_completion_time: ect }),
       });
       setEditingId(null);
       fetchAll(user.user_id, dateFilter);
@@ -186,6 +199,43 @@ export default function TasksPage() {
     return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
 
+  // Parse "1 hr", "2 days", "30 min" etc. → total minutes (null if unparseable)
+  function parseExpectedMinutes(str) {
+    if (!str) return null;
+    const s = str.toLowerCase().trim();
+    const match = s.match(/^([\d.]+)\s*(day|days|hr|hrs|hour|hours|min|mins|minute|minutes)$/);
+    if (!match) return null;
+    const val = parseFloat(match[1]);
+    const unit = match[2];
+    if (unit.startsWith("day"))  return Math.round(val * 1440);
+    if (unit.startsWith("h"))    return Math.round(val * 60);
+    if (unit.startsWith("min"))  return Math.round(val);
+    return null;
+  }
+
+  function fmtDuration(minutes) {
+    if (minutes < 60)  return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (minutes < 1440) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    const d = Math.floor(minutes / 1440);
+    const rh = Math.floor((minutes % 1440) / 60);
+    return rh > 0 ? `${d}d ${rh}h` : `${d}d`;
+  }
+
+  // Returns completion summary info for a completed task
+  function completionInfo(task) {
+    if (task.status !== "completed" || !task.completed_at) return null;
+    const takenMin = Math.round((new Date(task.completed_at) - new Date(task.created_at)) / 60000);
+    const expectedMin = parseExpectedMinutes(task.expected_completion_time);
+    return {
+      completedAt: fmtTime(task.completed_at),
+      taken: fmtDuration(takenMin),
+      expected: expectedMin ? fmtDuration(expectedMin) : task.expected_completion_time || null,
+      early: expectedMin != null ? takenMin <= expectedMin : null,
+    };
+  }
+
   const priorityDotColor = { high: "#F87171", medium: "#F59E0B", low: "#34D399" };
 
   if (!user) return null;
@@ -194,14 +244,14 @@ export default function TasksPage() {
 
   return (
     <>
-      <Head><title>Syntra — My Tasks</title></Head>
+      <Head><title>Realisieren Pulse — My Tasks</title></Head>
       <div className={styles.page}>
 
         {/* ── Sidebar ──────────────────────────────────── */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
-            <span className={styles.logoText}>Syntra</span>
+            <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
+            <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
             <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
@@ -307,9 +357,16 @@ export default function TasksPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.formLabel}>Expected Completion</label>
-                    <input className={styles.formInput} placeholder="e.g. by 3pm, 2h, EOD"
-                      value={form.expected_completion_time}
-                      onChange={e => setForm(f => ({ ...f, expected_completion_time: e.target.value }))} />
+                    <div className={styles.durationRow}>
+                      <input className={styles.durationNum} type="number" min="1" placeholder="e.g. 2"
+                        value={durNum} onChange={e => setDurNum(e.target.value)} />
+                      <select className={styles.durationUnit} value={durUnit} onChange={e => setDurUnit(e.target.value)}
+                        style={{ background: "#1e2436", color: "#ffffff" }}>
+                        <option value="min"  style={{ background: "#1e2436", color: "#ffffff" }}>min</option>
+                        <option value="hr"   style={{ background: "#1e2436", color: "#ffffff" }}>hr</option>
+                        <option value="day"  style={{ background: "#1e2436", color: "#ffffff" }}>day</option>
+                      </select>
+                    </div>
                   </div>
                   <div className={styles.formGroupFull}>
                     <label className={styles.formLabel}>Starting Note (optional)</label>
@@ -368,9 +425,16 @@ export default function TasksPage() {
                               </select>
                             </div>
                             <div className={styles.formGroup}>
-                              <input className={styles.formInput} placeholder="Expected completion"
-                                value={editForm.expected_completion_time}
-                                onChange={e => setEditForm(f => ({ ...f, expected_completion_time: e.target.value }))} />
+                              <div className={styles.durationRow}>
+                                <input className={styles.durationNum} type="number" min="1" placeholder="e.g. 2"
+                                  value={editDurNum} onChange={e => setEditDurNum(e.target.value)} />
+                                <select className={styles.durationUnit} value={editDurUnit} onChange={e => setEditDurUnit(e.target.value)}
+                                  style={{ background: "#1e2436", color: "#ffffff" }}>
+                                  <option value="min"  style={{ background: "#1e2436", color: "#ffffff" }}>min</option>
+                                  <option value="hr"   style={{ background: "#1e2436", color: "#ffffff" }}>hr</option>
+                                  <option value="day"  style={{ background: "#1e2436", color: "#ffffff" }}>day</option>
+                                </select>
+                              </div>
                             </div>
                           </div>
                           <div className={styles.formActions}>
@@ -392,8 +456,8 @@ export default function TasksPage() {
                                     task.status === "completed" ? styles.statusCompleted :
                                     task.status === "in_progress" ? styles.statusInProgress : styles.statusPending
                                   }`}>
-                                    {task.status === "in_progress" ? "In Progress" :
-                                     task.status === "completed"   ? "Completed"   : "Pending"}
+                                    {task.status === "in_progress" ? "⏳ In Progress" :
+                                     task.status === "completed"   ? "✓ Done"         : "Pending"}
                                   </span>
                                   <span className={`${styles.priorityBadge} ${
                                     task.priority === "high" ? styles.priorityHigh :
@@ -401,21 +465,46 @@ export default function TasksPage() {
                                   }`}>
                                     {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                                   </span>
-                                  {task.expected_completion_time && (
+                                  {task.expected_completion_time && task.status !== "completed" && (
                                     <span className={styles.taskExpected}>⏱ {task.expected_completion_time}</span>
                                   )}
-                                  {task.completed_at && (
-                                    <span className={styles.taskExpected}>✓ {fmtTime(task.completed_at)}</span>
-                                  )}
                                 </div>
+                                {/* Completion info strip */}
+                                {(() => {
+                                  const info = completionInfo(task);
+                                  if (!info) return null;
+                                  return (
+                                    <div className={styles.completionStrip}>
+                                      <span>✓ Completed at {info.completedAt}</span>
+                                      <span className={styles.completionDot}>·</span>
+                                      <span>Took {info.taken}</span>
+                                      {info.expected && (<>
+                                        <span className={styles.completionDot}>·</span>
+                                        <span>Expected: {info.expected}</span>
+                                        <span className={styles.completionDot}>·</span>
+                                        <span className={info.early ? styles.completionEarly : styles.completionLate}>
+                                          {info.early ? "✓ Within time" : "⏰ Overtime"}
+                                        </span>
+                                      </>)}
+                                    </div>
+                                  );
+                                })()}
                               </div>
                             </div>
                             <div className={styles.taskActions}>
                               {task.status === "pending" && isToday && (
-                                <button className={`${styles.actionBtn} ${styles.btnStart}`} onClick={() => changeStatus(task.id, "in_progress")}>Start</button>
+                                <button className={`${styles.actionBtn} ${styles.btnStart}`}
+                                  disabled={updatingId === task.id}
+                                  onClick={() => changeStatus(task.id, "in_progress")}>
+                                  {updatingId === task.id ? "..." : "Start"}
+                                </button>
                               )}
                               {task.status === "in_progress" && isToday && (
-                                <button className={`${styles.actionBtn} ${styles.btnComplete}`} onClick={() => changeStatus(task.id, "completed")}>Complete</button>
+                                <button className={`${styles.actionBtn} ${styles.btnComplete}`}
+                                  disabled={updatingId === task.id}
+                                  onClick={() => changeStatus(task.id, "completed")}>
+                                  {updatingId === task.id ? "..." : "✓ Done"}
+                                </button>
                               )}
                               {isToday && !isCompleted && (
                                 <button className={`${styles.actionBtn} ${styles.btnEdit}`} onClick={() => startEdit(task)} title="Edit">✎</button>

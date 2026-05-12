@@ -12,11 +12,11 @@
 # USAGE (on your server via SSH):
 #   ssh root@YOUR_SERVER_IP
 #
-#   # Clone the WHOLE project repo into /opt/syntra
+#   # Clone the WHOLE project repo into /opt/realisieren-pulse
 #   # (backend/, frontend/, desktop/, deploy/ will all be inside it)
-#   git clone https://github.com/YOUR_USERNAME/ai-assistant.git /opt/syntra
+#   git clone https://github.com/YOUR_USERNAME/ai-assistant.git /opt/realisieren-pulse
 #
-#   cd /opt/syntra
+#   cd /opt/realisieren-pulse
 #   chmod +x deploy/setup_server.sh
 #   ./deploy/setup_server.sh
 #
@@ -28,7 +28,7 @@ set -e   # stop on any error
 
 echo ""
 echo "============================================"
-echo "  Syntra Server Setup"
+echo "  Realisieren Pulse Server Setup"
 echo "============================================"
 echo ""
 
@@ -70,18 +70,18 @@ systemctl start mongod
 systemctl enable mongod
 
 # ── Step 6: Create virtual environment ───────────────────
-# The repo is already cloned to /opt/syntra/ (see USAGE above).
+# The repo is already cloned to /opt/realisieren-pulse/ (see USAGE above).
 # We just create a Python virtualenv next to it.
-# backend/ frontend/ desktop/ are already inside /opt/syntra/
+# backend/ frontend/ desktop/ are already inside /opt/realisieren-pulse/
 echo "[6/7] Setting up Python virtual environment..."
-if [ ! -d "/opt/syntra" ]; then
-    echo "ERROR: /opt/syntra does not exist."
+if [ ! -d "/opt/realisieren-pulse" ]; then
+    echo "ERROR: /opt/realisieren-pulse does not exist."
     echo "Please clone your repo first:"
-    echo "  git clone https://github.com/YOUR_USERNAME/ai-assistant.git /opt/syntra"
+    echo "  git clone https://github.com/YOUR_USERNAME/ai-assistant.git /opt/realisieren-pulse"
     exit 1
 fi
-python3.11 -m venv /opt/syntra/venv
-/opt/syntra/venv/bin/pip install --upgrade pip -q
+python3.11 -m venv /opt/realisieren-pulse/venv
+/opt/realisieren-pulse/venv/bin/pip install --upgrade pip -q
 
 # ── Step 7: Firewall ──────────────────────────────────────
 echo "[7/7] Configuring firewall..."
@@ -100,13 +100,13 @@ echo ""
 echo "Next steps:"
 echo "  1. Create the PostgreSQL database and user:"
 echo "     sudo -u postgres psql"
-echo "     CREATE USER syntra_user WITH PASSWORD 'choose_a_password';"
-echo "     CREATE DATABASE syntra_staging OWNER syntra_user;"
+echo "     CREATE USER realisieren_pulse_user WITH PASSWORD 'choose_a_password';"
+echo "     CREATE DATABASE realisieren_pulse_staging OWNER realisieren_pulse_user;"
 echo "     \\q"
 echo ""
-echo "  2. Create /opt/syntra/backend/.env with your settings"
-     echo "     cp /opt/syntra/backend/.env.example /opt/syntra/backend/.env"
-     echo "     nano /opt/syntra/backend/.env"
+echo "  2. Create /opt/realisieren-pulse/backend/.env with your settings"
+     echo "     cp /opt/realisieren-pulse/backend/.env.example /opt/realisieren-pulse/backend/.env"
+     echo "     nano /opt/realisieren-pulse/backend/.env"
 echo ""
 echo "  3. Run: ./deploy/deploy_backend.sh"
 echo ""

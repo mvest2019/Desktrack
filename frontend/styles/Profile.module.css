@@ -154,6 +154,7 @@
 .formInput::placeholder { color: rgba(255,255,255,0.25); }
 .formInput:focus { border-color: rgba(74,158,255,0.6); background: rgba(74,158,255,0.06); }
 .formInput:disabled { opacity: 0.4; cursor: not-allowed; }
+.formInput option { background: #1e2436; color: #ffffff; }
 
 .formInputReadonly {
   background: rgba(255,255,255,0.03);

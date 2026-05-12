@@ -41,7 +41,31 @@ from pathlib import Path
 # ── App icon paths ─────────────────────────────────────────
 _HERE     = Path(__file__).parent
 _ICON_ICO = str(_HERE / "app_icon.ico")
-_ICON_PNG = str(Path(__file__).parent.parent / "imgs" / "app_icon.png")
+# When frozen (EXE), PNG is bundled next to the exe; in dev mode use ../imgs/
+_ICON_PNG = str(
+    _HERE / "app_icon.png"
+    if (_HERE / "app_icon.png").exists()
+    else Path(__file__).parent.parent / "imgs" / "app_icon.png"
+)
+
+# ── Persistent icon photo (must stay alive — GC kills it otherwise) ─
+_ICON_PHOTO = None
+
+def _set_window_icon(win):
+    """Set title-bar icon on any tk/CTk window reliably."""
+    global _ICON_PHOTO
+    try:
+        if _ICON_PHOTO is None:
+            from PIL import ImageTk
+            _ICON_PHOTO = ImageTk.PhotoImage(
+                Image.open(_ICON_PNG).resize((32, 32), Image.LANCZOS)
+            )
+        win.wm_iconphoto(True, _ICON_PHOTO)
+    except Exception:
+        try:
+            win.iconbitmap(_ICON_ICO)
+        except Exception:
+            pass
 
 # ── Session persistence ─────────────────────────────────────
 if getattr(sys, "frozen", False):
@@ -98,16 +122,12 @@ class LoginWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Syntra")
+        self.title("Realisieren Pulse")
         self.geometry("440x620")
         self.resizable(False, False)
         self._center_window(440, 620)
         ctk.set_appearance_mode("dark")
-        try:
-            self.iconbitmap(_ICON_ICO)
-        except Exception:
-            pass
-
+        _set_window_icon(self)
         self._build_ui()
 
         # If a session is saved, skip login and show the Start screen
@@ -123,114 +143,161 @@ class LoginWindow(ctk.CTk):
         y  = (sh // 2) - (h // 2)
         self.geometry(f"{w}x{h}+{x}+{y}")
 
+    def _make_field_row(self, parent, icon, var, placeholder, show=""):
+        row = ctk.CTkFrame(parent, fg_color="#1e2130", corner_radius=10,
+                           border_color="#2e3347", border_width=1, height=50)
+        row.pack(fill="x", pady=(4, 0))
+        row.pack_propagate(False)
+        ctk.CTkLabel(row, text=icon, font=ctk.CTkFont(size=15),
+                     text_color="#5a6180", width=40).pack(side="left", padx=(10, 0))
+        entry = ctk.CTkEntry(row, textvariable=var, placeholder_text=placeholder,
+                             show=show, font=ctk.CTkFont(size=13),
+                             fg_color="transparent", border_width=0,
+                             text_color="#e0e4f0", placeholder_text_color="#4a5270")
+        entry.pack(side="left", fill="both", expand=True, padx=(4, 10))
+        return entry
+
     def _build_ui(self):
-        """Create all the widgets on the login window"""
+        """Create both Sign In and Create Account views inside the same window."""
         self.configure(fg_color="#161b27")
 
-        inner = ctk.CTkFrame(self, fg_color="transparent")
-        inner.pack(expand=True, fill="both", padx=44, pady=0)
+        # ── Shared icon header (always visible) ──────────
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(pady=(36, 0))
 
-        # push content to vertical centre
-        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
-
-        # ── Icon box ──────────────────────────────────────
-        icon_box = ctk.CTkFrame(inner, fg_color="#1e2436", corner_radius=16,
-                                width=68, height=68)
+        icon_box = ctk.CTkFrame(header, fg_color="#1e2436", corner_radius=20,
+                                width=96, height=96)
         icon_box.pack()
         icon_box.pack_propagate(False)
         try:
-            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(48, 48))
+            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(76, 76))
             ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
         except Exception:
-            ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
-                         text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
+            ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(size=44, weight="bold"),
+                         text_color="#4f8ef7").place(relx=0.5, rely=0.5, anchor="center")
 
-        # ── Title & subtitle ──────────────────────────────
-        ctk.CTkLabel(inner, text="Syntra",
-                     font=ctk.CTkFont(size=28, weight="bold"),
-                     text_color="#ffffff").pack(pady=(14, 2))
-        ctk.CTkLabel(inner, text="Real-time work sync & tracking",
+        ctk.CTkLabel(header, text="Realisieren Pulse",
+                     font=ctk.CTkFont(size=26, weight="bold"),
+                     text_color="#ffffff").pack(pady=(12, 0))
+
+        # ── Sign In frame ─────────────────────────────────
+        self._login_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self._login_frame.pack(fill="both", expand=True, padx=44)
+
+        ctk.CTkLabel(self._login_frame, text="Real-time work sync & tracking",
                      font=ctk.CTkFont(size=13),
-                     text_color="#6b7494").pack(pady=(0, 26))
+                     text_color="#6b7494").pack(pady=(4, 20))
 
-        # ── Email field ───────────────────────────────────
-        ctk.CTkLabel(inner, text="Email Address", anchor="w",
+        ctk.CTkLabel(self._login_frame, text="Email Address", anchor="w",
                      font=ctk.CTkFont(size=13, weight="bold"),
                      text_color="#c8cde0").pack(fill="x")
-
-        email_row = ctk.CTkFrame(inner, fg_color="#1e2130", corner_radius=10,
-                                 border_color="#2e3347", border_width=1, height=50)
-        email_row.pack(fill="x", pady=(4, 0))
-        email_row.pack_propagate(False)
-        ctk.CTkLabel(email_row, text="✉", font=ctk.CTkFont(size=15),
-                     text_color="#5a6180", width=40).pack(side="left", padx=(10, 0))
         self.email_var = tk.StringVar()
-        self.email_entry = ctk.CTkEntry(
-            email_row, textvariable=self.email_var,
-            placeholder_text="you@example.com",
-            font=ctk.CTkFont(size=13), fg_color="transparent", border_width=0,
-            text_color="#e0e4f0", placeholder_text_color="#4a5270",
-        )
-        self.email_entry.pack(side="left", fill="both", expand=True, padx=(4, 10))
+        self.email_entry = self._make_field_row(
+            self._login_frame, "✉", self.email_var, "you@example.com")
 
-        # ── Password field ────────────────────────────────
-        ctk.CTkLabel(inner, text="Password", anchor="w",
+        ctk.CTkLabel(self._login_frame, text="Password", anchor="w",
                      font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x", pady=(16, 0))
-
-        pass_row = ctk.CTkFrame(inner, fg_color="#1e2130", corner_radius=10,
-                                border_color="#2e3347", border_width=1, height=50)
-        pass_row.pack(fill="x", pady=(4, 0))
-        pass_row.pack_propagate(False)
-        ctk.CTkLabel(pass_row, text="🔒", font=ctk.CTkFont(size=15),
-                     text_color="#5a6180", width=40).pack(side="left", padx=(10, 0))
+                     text_color="#c8cde0").pack(fill="x", pady=(14, 0))
         self.password_var = tk.StringVar()
-        self.password_entry = ctk.CTkEntry(
-            pass_row, textvariable=self.password_var,
-            placeholder_text="Enter your password", show="•",
-            font=ctk.CTkFont(size=13), fg_color="transparent", border_width=0,
-            text_color="#e0e4f0", placeholder_text_color="#4a5270",
-        )
-        self.password_entry.pack(side="left", fill="both", expand=True, padx=(4, 10))
+        self.password_entry = self._make_field_row(
+            self._login_frame, "🔒", self.password_var, "Enter your password", show="•")
 
-        # ── Error label ───────────────────────────────────
         self.error_var = tk.StringVar(value="")
-        self.error_label = ctk.CTkLabel(
-            inner, textvariable=self.error_var,
-            text_color="#FF6B6B", font=ctk.CTkFont(size=12), wraplength=360,
-        )
-        self.error_label.pack(pady=(10, 0))
+        ctk.CTkLabel(self._login_frame, textvariable=self.error_var,
+                     text_color="#FF6B6B", font=ctk.CTkFont(size=12),
+                     wraplength=360).pack(pady=(8, 0))
 
-        # ── Sign In button ────────────────────────────────
         self.login_btn = ctk.CTkButton(
-            inner, text="Sign In  →", height=50,
+            self._login_frame, text="Sign In  →", height=50,
             font=ctk.CTkFont(size=14, weight="bold"),
             fg_color="#4f8ef7", hover_color="#3a7ae8",
             corner_radius=12, command=self._on_login_click,
         )
-        self.login_btn.pack(fill="x", pady=(14, 0))
+        self.login_btn.pack(fill="x", pady=(12, 0))
 
-        # ── Create account link ───────────────────────────
-        foot = ctk.CTkFrame(inner, fg_color="transparent")
-        foot.pack(pady=(12, 0))
-        ctk.CTkLabel(foot, text="Don't have an account? ",
+        foot1 = ctk.CTkFrame(self._login_frame, fg_color="transparent")
+        foot1.pack(pady=(10, 0))
+        ctk.CTkLabel(foot1, text="Don't have an account? ",
                      font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
-        ctk.CTkButton(foot, text="Create one",
+        ctk.CTkButton(foot1, text="Create one",
                       font=ctk.CTkFont(size=12, weight="bold"),
                       text_color="#4f8ef7", fg_color="transparent",
                       hover_color="#1a2035", border_width=0, height=22,
-                      width=70, command=self._open_register).pack(side="left")
+                      width=70, command=self._show_register).pack(side="left")
 
-        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
+        # ── Create Account frame (hidden initially) ───────
+        self._reg_frame = ctk.CTkFrame(self, fg_color="transparent")
 
-        # Press Enter to login
+        ctk.CTkLabel(self._reg_frame, text="Create your account",
+                     font=ctk.CTkFont(size=13),
+                     text_color="#6b7494").pack(pady=(4, 20), padx=44)
+
+        reg_inner = ctk.CTkFrame(self._reg_frame, fg_color="transparent")
+        reg_inner.pack(fill="both", expand=True, padx=44)
+
+        ctk.CTkLabel(reg_inner, text="Full Name", anchor="w",
+                     font=ctk.CTkFont(size=13, weight="bold"),
+                     text_color="#c8cde0").pack(fill="x")
+        self.reg_name_var = tk.StringVar()
+        self._make_field_row(reg_inner, "👤", self.reg_name_var, "Your name")
+
+        ctk.CTkLabel(reg_inner, text="Email Address", anchor="w",
+                     font=ctk.CTkFont(size=13, weight="bold"),
+                     text_color="#c8cde0").pack(fill="x", pady=(12, 0))
+        self.reg_email_var = tk.StringVar()
+        self._make_field_row(reg_inner, "✉", self.reg_email_var, "you@example.com")
+
+        ctk.CTkLabel(reg_inner, text="Password", anchor="w",
+                     font=ctk.CTkFont(size=13, weight="bold"),
+                     text_color="#c8cde0").pack(fill="x", pady=(12, 0))
+        self.reg_pass_var = tk.StringVar()
+        self._make_field_row(reg_inner, "🔒", self.reg_pass_var, "Min 6 characters", show="•")
+
+        self.reg_error_var = tk.StringVar(value="")
+        ctk.CTkLabel(reg_inner, textvariable=self.reg_error_var,
+                     text_color="#FF6B6B", font=ctk.CTkFont(size=12),
+                     wraplength=360).pack(pady=(8, 0))
+
+        self.reg_btn = ctk.CTkButton(
+            reg_inner, text="Create Account  →", height=50,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#4f8ef7", hover_color="#3a7ae8",
+            corner_radius=12, command=self._on_register_click,
+        )
+        self.reg_btn.pack(fill="x", pady=(12, 0))
+
+        foot2 = ctk.CTkFrame(reg_inner, fg_color="transparent")
+        foot2.pack(pady=(10, 0))
+        ctk.CTkLabel(foot2, text="Already have an account? ",
+                     font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
+        ctk.CTkButton(foot2, text="Sign in",
+                      font=ctk.CTkFont(size=12, weight="bold"),
+                      text_color="#4f8ef7", fg_color="transparent",
+                      hover_color="#1a2035", border_width=0, height=22,
+                      width=50, command=self._show_login).pack(side="left")
+
         self.bind("<Return>", lambda _: self._on_login_click())
         self.email_entry.focus()
 
-    def _open_register(self):
-        """Open the registration window"""
-        reg = RegisterWindow(self)
-        reg.grab_set()
+    def _show_register(self):
+        self._login_frame.pack_forget()
+        self._reg_frame.pack(fill="both", expand=True)
+        self.reg_name_var.set("")
+        self.reg_email_var.set("")
+        self.reg_pass_var.set("")
+        self.reg_error_var.set("")
+        self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4f8ef7")
+        self.unbind("<Return>")
+        self.bind("<Return>", lambda _: self._on_register_click())
+
+    def _show_login(self):
+        self._reg_frame.pack_forget()
+        self._login_frame.pack(fill="both", expand=True, padx=44)
+        self.error_var.set("")
+        self.login_btn.configure(text="Sign In  →", state="normal")
+        self.unbind("<Return>")
+        self.bind("<Return>", lambda _: self._on_login_click())
+        self.email_entry.focus()
 
     def _on_login_click(self):
         """Called when user clicks Sign In"""
@@ -295,196 +362,52 @@ class LoginWindow(ctk.CTk):
         self.error_var.set(message)
         self.login_btn.configure(text="Sign In →", state="normal")
 
-
-# ══════════════════════════════════════════════════════════
-#  REGISTER WINDOW
-# ══════════════════════════════════════════════════════════
-class RegisterWindow(ctk.CTkToplevel):
-    """Modal window for creating a new account."""
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.title("Syntra — Create Account")
-        self.geometry("460x660")
-        self.resizable(False, False)
-        self._center_window(460, 660)
-        self.configure(fg_color="#161b27")
-        try:
-            self.after(200, lambda: self.iconbitmap(_ICON_ICO))
-        except Exception:
-            pass
-        self._build_ui()
-
-    def _center_window(self, w, h):
-        sw = self.winfo_screenwidth()
-        sh = self.winfo_screenheight()
-        x  = (sw // 2) - (w // 2)
-        y  = (sh // 2) - (h // 2)
-        self.geometry(f"{w}x{h}+{x}+{y}")
-
-    def _make_field_row(self, parent, icon: str, var: tk.StringVar,
-                        placeholder: str, show: str = ""):
-        """Create a field row matching the web frontend style (icon + entry)."""
-        row = ctk.CTkFrame(parent, fg_color="#1e2130", corner_radius=10,
-                           border_color="#2e3347", border_width=1, height=50)
-        row.pack(fill="x", pady=(4, 0))
-        row.pack_propagate(False)
-
-        ctk.CTkLabel(row, text=icon, font=ctk.CTkFont(size=15),
-                     text_color="#5a6180", width=40).pack(side="left", padx=(10, 0))
-
-        entry = ctk.CTkEntry(
-            row, textvariable=var, placeholder_text=placeholder,
-            show=show, font=ctk.CTkFont(size=13),
-            fg_color="transparent", border_width=0, text_color="#e0e4f0",
-            placeholder_text_color="#4a5270",
-        )
-        entry.pack(side="left", fill="both", expand=True, padx=(4, 10))
-        return entry
-
-    def _build_ui(self):
-        inner = ctk.CTkFrame(self, fg_color="transparent")
-        inner.pack(expand=True, fill="both", padx=44, pady=0)
-
-        # push content to vertical centre
-        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
-
-        # ── Icon box ──────────────────────────────────────
-        icon_box = ctk.CTkFrame(inner, fg_color="#1e2436", corner_radius=16,
-                                width=68, height=68)
-        icon_box.pack()
-        icon_box.pack_propagate(False)
-        try:
-            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(48, 48))
-            ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
-        except Exception:
-            ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
-                         text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
-
-        # ── Title & subtitle ──────────────────────────────
-        ctk.CTkLabel(inner, text="Create Account",
-                     font=ctk.CTkFont(size=26, weight="bold"),
-                     text_color="#ffffff").pack(pady=(14, 2))
-        ctk.CTkLabel(inner, text="Join Syntra today",
-                     font=ctk.CTkFont(size=13),
-                     text_color="#6b7494").pack(pady=(0, 20))
-
-        # ── Full Name ─────────────────────────────────────
-        ctk.CTkLabel(inner, text="Full Name", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x")
-        self.name_var = tk.StringVar()
-        self._make_field_row(inner, "👤", self.name_var, "Your name")
-
-        # ── Email ─────────────────────────────────────────
-        ctk.CTkLabel(inner, text="Email Address", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x", pady=(14, 0))
-        self.email_var = tk.StringVar()
-        self._make_field_row(inner, "✉", self.email_var, "you@example.com")
-
-        # ── Password ──────────────────────────────────────
-        ctk.CTkLabel(inner, text="Password", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x", pady=(14, 0))
-        self.pass_var = tk.StringVar()
-        self._make_field_row(inner, "🔒", self.pass_var, "Min 6 characters", show="•")
-
-        # ── Error label ───────────────────────────────────
-        self.error_var = tk.StringVar(value="")
-        ctk.CTkLabel(inner, textvariable=self.error_var,
-                     text_color="#FF6B6B", font=ctk.CTkFont(size=12),
-                     wraplength=360).pack(pady=(10, 0))
-
-        # ── Create Account button ─────────────────────────
-        self.btn = ctk.CTkButton(
-            inner, text="Create Account  →", height=50,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#4f8ef7", hover_color="#3a7ae8",
-            corner_radius=12, command=self._on_submit,
-        )
-        self.btn.pack(fill="x", pady=(14, 0))
-
-        # ── Back link ─────────────────────────────────────
-        foot = ctk.CTkFrame(inner, fg_color="transparent")
-        foot.pack(pady=(12, 0))
-        ctk.CTkLabel(foot, text="Already have an account? ",
-                     font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
-        ctk.CTkButton(foot, text="Sign in",
-                      font=ctk.CTkFont(size=12, weight="bold"),
-                      text_color="#4f8ef7", fg_color="transparent",
-                      hover_color="#1e2435", border_width=0, height=22,
-                      width=50, command=self.destroy).pack(side="left")
-
-        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
-
-        self.bind("<Return>", lambda _: self._on_submit())
-
-    def _on_submit(self):
-        name     = self.name_var.get().strip()
-        email    = self.email_var.get().strip()
-        password = self.pass_var.get().strip()
-
+    # ── Registration (inline) ─────────────────────────────
+    def _on_register_click(self):
+        name     = self.reg_name_var.get().strip()
+        email    = self.reg_email_var.get().strip()
+        password = self.reg_pass_var.get().strip()
         if not name or not email or not password:
-            self.error_var.set("⚠  Please fill in all fields.")
+            self.reg_error_var.set("⚠  Please fill in all fields.")
             return
         if len(password) < 6:
-            self.error_var.set("⚠  Password must be at least 6 characters.")
+            self.reg_error_var.set("⚠  Password must be at least 6 characters.")
             return
-
-        self.btn.configure(text="Creating...", state="disabled")
-        self.error_var.set("")
+        self.reg_btn.configure(text="Creating...", state="disabled")
+        self.reg_error_var.set("")
         threading.Thread(target=self._do_register,
                          args=(name, email, password), daemon=True).start()
 
-    def _do_register(self, name: str, email: str, password: str):
+    def _do_register(self, name, email, password):
         try:
-            res = requests.post(
-                f"{API_URL}/api/register",
-                json={"username": name, "email": email, "password": password},
-                timeout=10,
-            )
+            res = requests.post(f"{API_URL}/api/register",
+                                json={"username": name, "email": email, "password": password},
+                                timeout=10)
             data = res.json()
             if res.ok and data.get("success"):
-                # Auto-login immediately after registration
-                self.after(0, lambda: self.btn.configure(
-                    text="✓ Account created! Signing in...", state="disabled", fg_color="#2ecc71"
-                ))
-                login_res = requests.post(
-                    f"{API_URL}/api/login",
-                    json={"email": email, "password": password},
-                    timeout=10,
-                )
+                self.after(0, lambda: self.reg_btn.configure(
+                    text="✓ Signing in...", state="disabled", fg_color="#2ecc71"))
+                login_res = requests.post(f"{API_URL}/api/login",
+                                          json={"email": email, "password": password},
+                                          timeout=10)
                 if login_res.status_code == 200:
                     user_data = login_res.json()
-                    self.after(0, lambda: self._auto_login(user_data))
+                    self.after(0, lambda: self._login_success(user_data))
                 else:
-                    # Registration succeeded but auto-login failed — just close
-                    self.after(0, self._success_no_login)
+                    self.after(0, self._show_login)
             else:
                 msg = data.get("detail", "Registration failed.")
-                self.after(0, lambda: self._failure(msg))
+                self.after(0, lambda: self._reg_failure(msg))
         except requests.exceptions.ConnectionError:
-            self.after(0, lambda: self._failure("⚠  Cannot connect to server."))
+            self.after(0, lambda: self._reg_failure("⚠  Cannot connect to server."))
         except Exception as e:
-            self.after(0, lambda: self._failure(f"⚠  Error: {e}"))
+            self.after(0, lambda: self._reg_failure(f"⚠  Error: {e}"))
 
-    def _auto_login(self, user_data: dict):
-        """Close register window and hand off to login window's success handler."""
-        parent = self.master
-        self.destroy()
-        if parent and parent.winfo_exists():
-            parent._login_success(user_data)
+    def _reg_failure(self, msg):
+        self.reg_error_var.set(msg)
+        self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4f8ef7")
 
-    def _success_no_login(self):
-        self.error_var.set("")
-        self.btn.configure(text="✓ Account created! Closing...", state="disabled",
-                           fg_color="#2ecc71")
-        self.after(1800, self.destroy)
 
-    def _failure(self, msg: str):
-        self.error_var.set(msg)
-        self.btn.configure(text="Create Account", state="normal")
 
 
 
@@ -502,15 +425,12 @@ class StartWindow(ctk.CTkToplevel):
         self._login_win = login_win
         self.user_data  = user_data
 
-        self.title("Syntra")
+        self.title("Realisieren Pulse")
         self.geometry("440x500")
         self.resizable(False, False)
         self._center_window(440, 500)
         self.configure(fg_color="#161b27")
-        try:
-            self.after(200, lambda: self.iconbitmap(_ICON_ICO))
-        except Exception:
-            pass
+        self.after(200, lambda: _set_window_icon(self))
 
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -527,16 +447,16 @@ class StartWindow(ctk.CTkToplevel):
         ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
 
         # Icon
-        icon_box = ctk.CTkFrame(inner, fg_color="#1e2436", corner_radius=16,
-                                width=68, height=68)
+        icon_box = ctk.CTkFrame(inner, fg_color="#1e2436", corner_radius=20,
+                                width=96, height=96)
         icon_box.pack()
         icon_box.pack_propagate(False)
         try:
-            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(48, 48))
+            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(76, 76))
             ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
         except Exception:
-            ctk.CTkLabel(icon_box, text="⚡", font=ctk.CTkFont(size=34),
-                         text_color="#e8820c").place(relx=0.5, rely=0.5, anchor="center")
+            ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(size=44, weight="bold"),
+                         text_color="#4f8ef7").place(relx=0.5, rely=0.5, anchor="center")
 
         # Greeting
         name = self.user_data.get("username", "there")
@@ -621,21 +541,18 @@ class DashboardWindow(ctk.CTkToplevel):
 
         # Local queue — screenshots saved here when API is unreachable
         import tempfile
-        self._queue_dir = Path(tempfile.gettempdir()) / "syntra_pending" / str(self.user_id)
+        self._queue_dir = Path(tempfile.gettempdir()) / "realisieren_pulse_pending" / str(self.user_id)
         self._queue_dir.mkdir(parents=True, exist_ok=True)
 
         # Activity tracker — started after UI is built
         self._tracker     = ActivityTracker(log_fn=self._log)
         self._app_tracker = AppTracker(log_fn=self._log)
 
-        self.title(f"Syntra — {self.username}")
+        self.title(f"Realisieren Pulse — {self.username}")
         self.geometry("540x680")
         self.resizable(False, False)
         self._center_window(540, 680)
-        try:
-            self.after(200, lambda: self.iconbitmap(_ICON_ICO))
-        except Exception:
-            pass
+        self.after(200, lambda: _set_window_icon(self))
 
         self._build_ui()
         self._animate_progress()  # Start after all widgets are built
@@ -679,16 +596,16 @@ class DashboardWindow(ctk.CTkToplevel):
         header.pack_propagate(False)
 
         try:
-            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(32, 32))
-            ctk.CTkLabel(header, image=_hdr_img, text="  Syntra",
+            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(40, 40))
+            ctk.CTkLabel(header, image=_hdr_img, text="  Realisieren Pulse",
                          compound="left",
-                         font=ctk.CTkFont(size=19, weight="bold")).pack(side="left", padx=20, pady=18)
+                         font=ctk.CTkFont(size=19, weight="bold")).pack(side="left", padx=20, pady=15)
         except Exception:
             ctk.CTkLabel(
                 header,
-                text="⚡  Syntra",
+                text="R  Realisieren Pulse",
                 font=ctk.CTkFont(size=19, weight="bold"),
-            ).pack(side="left", padx=20, pady=18)
+            ).pack(side="left", padx=20, pady=15)
 
         # Live indicator
         live_frame = ctk.CTkFrame(header, fg_color="transparent")
@@ -703,7 +620,7 @@ class DashboardWindow(ctk.CTkToplevel):
         self._welcome_bar.pack_propagate(False)
         ctk.CTkLabel(
             self._welcome_bar,
-            text=f"👋  Welcome back, {self.username}!   Syntra is monitoring your activity.",
+            text=f"👋  Welcome back, {self.username}!   Realisieren Pulse is monitoring your activity.",
             font=ctk.CTkFont(size=12),
             text_color="#5da8ff",
         ).pack(expand=True)

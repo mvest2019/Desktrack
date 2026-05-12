@@ -1,4 +1,4 @@
-# Syntra Staging Deployment Guide
+# Realisieren Pulse Staging Deployment Guide
 ### For a beginner deploying a real MVP for the first time
 
 ---
@@ -9,7 +9,7 @@ Before touching any command, understand **what each piece is** and **why it exis
 
 ```
   [Windows Desktop App]  ←──────────────────────────────────┐
-      Syntra.exe                                             │  HTTP API calls
+      RealisierenPulse.exe                                             │  HTTP API calls
       (Python + Tkinter)                                     │  (login, screenshots,
                                                              │   activity logs)
                                                              ↓
@@ -41,7 +41,7 @@ Before touching any command, understand **what each piece is** and **why it exis
 When you clone the project to the server, it will look like this:
 
 ```
-/opt/syntra/                    ← git repo root
+/opt/realisieren-pulse/                    ← git repo root
   backend/                      ← FastAPI (Python)
     main.py
     database.py
@@ -52,12 +52,12 @@ When you clone the project to the server, it will look like this:
     package.json
   desktop/                      ← Windows app source (not needed on server)
     app.py
-    syntra.spec
+    realisieren-pulse.spec
   deploy/                       ← All deployment scripts
     setup_server.sh
     deploy_backend.sh
     nginx.conf
-    syntra-backend.service
+    realisieren-pulse-backend.service
   venv/                         ← Python virtual environment (created by setup script)
 ```
 
@@ -97,10 +97,10 @@ requests to your Python process on port 8000. You use it because:
 ssh root@108.181.168.43
 
 # Clone the whole project
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /opt/syntra
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /opt/realisieren-pulse
 
 # Run setup (installs Python, Postgres, MongoDB, Nginx)
-cd /opt/syntra
+cd /opt/realisieren-pulse
 chmod +x deploy/setup_server.sh
 ./deploy/setup_server.sh
 ```
@@ -112,8 +112,8 @@ the databases. These NEVER go into git — you create the file directly on the s
 
 ```bash
 # On the server:
-cp /opt/syntra/backend/.env.staging /opt/syntra/backend/.env
-nano /opt/syntra/backend/.env
+cp /opt/realisieren-pulse/backend/.env.staging /opt/realisieren-pulse/backend/.env
+nano /opt/realisieren-pulse/backend/.env
 ```
 
 Edit `ALLOWED_ORIGINS` to include your Vercel URL once you know it:
@@ -127,15 +127,15 @@ Save with: `Ctrl+O` then `Enter` then `Ctrl+X`
 
 ```bash
 # On the server:
-sudo cp /opt/syntra/deploy/syntra-backend.service /etc/systemd/system/
+sudo cp /opt/realisieren-pulse/deploy/realisieren-pulse-backend.service /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable syntra-backend    # auto-start on reboot
-sudo systemctl start syntra-backend     # start now
+sudo systemctl enable realisieren-pulse-backend    # auto-start on reboot
+sudo systemctl start realisieren-pulse-backend     # start now
 ```
 
 Check that it's running:
 ```bash
-sudo systemctl status syntra-backend
+sudo systemctl status realisieren-pulse-backend
 # You should see: Active: active (running)
 ```
 
@@ -143,8 +143,8 @@ sudo systemctl status syntra-backend
 
 ```bash
 # On the server:
-sudo cp /opt/syntra/deploy/nginx.conf /etc/nginx/sites-available/syntra
-sudo ln -s /etc/nginx/sites-available/syntra /etc/nginx/sites-enabled/syntra
+sudo cp /opt/realisieren-pulse/deploy/nginx.conf /etc/nginx/sites-available/realisieren-pulse
+sudo ln -s /etc/nginx/sites-available/realisieren-pulse /etc/nginx/sites-enabled/realisieren-pulse
 sudo nginx -t                    # test for errors
 sudo systemctl reload nginx
 ```
@@ -162,7 +162,7 @@ If you see it — **the backend is deployed and working.**
 
 ```bash
 ssh root@108.181.168.43
-cd /opt/syntra
+cd /opt/realisieren-pulse
 ./deploy/deploy_backend.sh
 ```
 
@@ -200,12 +200,12 @@ No server configuration needed — they handle everything.
 - You get a URL like `https://your-app.vercel.app`
 
 **Step 6: Update CORS on your backend**
-- Edit `/opt/syntra/backend/.env` on the server
+- Edit `/opt/realisieren-pulse/backend/.env` on the server
 - Add your Vercel URL to `ALLOWED_ORIGINS`:
   ```
   ALLOWED_ORIGINS=http://108.181.168.43,https://your-app.vercel.app,http://localhost:3000
   ```
-- Restart backend: `sudo systemctl restart syntra-backend`
+- Restart backend: `sudo systemctl restart realisieren-pulse-backend`
 
 **Every future frontend update:** just push to GitHub. Vercel auto-deploys.
 
@@ -221,7 +221,7 @@ apt-get install -y nodejs
 npm install -g pm2
 
 # Every update:
-cd /opt/syntra
+cd /opt/realisieren-pulse
 ./deploy/deploy_frontend.sh
 ```
 
@@ -258,7 +258,7 @@ The API URL is controlled by `desktop/config.py` in this priority order:
 
 `desktop/config.ini` is already updated to point to staging:
 ```ini
-[syntra]
+[realisieren-pulse]
 api_url = http://108.181.168.43:8000
 ```
 
@@ -286,7 +286,7 @@ PyInstaller solves a fundamental problem: your Python app needs Python installed
 to run. Most Windows users don't have Python. PyInstaller bundles:
 
 ```
-Syntra.exe
+RealisierenPulse.exe
   ├── Python interpreter (embedded)
   ├── All your .py files (compiled to .pyc bytecode)
   ├── All pip packages (customtkinter, requests, Pillow, etc.)
@@ -297,7 +297,7 @@ Syntra.exe
 The result is a single `.exe` file that any Windows user can run — **no Python
 installation needed.** The tradeoff is the EXE will be ~50-100 MB.
 
-`console=False` in `syntra.spec` means no black terminal window appears — it
+`console=False` in `realisieren-pulse.spec` means no black terminal window appears — it
 looks like a proper Windows app.
 
 ### 4.2 One-click build command
@@ -312,10 +312,10 @@ What `build_exe.ps1` does:
 1. Checks PyInstaller is installed
 2. Converts `imgs/app_icon.png` → `assets/icon.ico` (Windows needs .ico format)
 3. Cleans old build output
-4. Runs `pyinstaller syntra.spec`
+4. Runs `pyinstaller realisieren-pulse.spec`
 5. Reports success + file size
 
-Output: `desktop\dist\Syntra.exe`
+Output: `desktop\dist\RealisierenPulse.exe`
 
 **First time only:** install dependencies
 ```powershell
@@ -333,8 +333,8 @@ Common errors and fixes:
 | `ModuleNotFoundError: pynput` | `pip install pynput` |
 | `win32api not found` | `pip install pywin32` |
 | `customtkinter not found` | `pip install customtkinter` |
-| EXE crashes on launch | Run `pyinstaller syntra.spec --debug all` and read the log |
-| Missing DLL error | Add the DLL name to `binaries=[]` in syntra.spec |
+| EXE crashes on launch | Run `pyinstaller realisieren-pulse.spec --debug all` and read the log |
+| Missing DLL error | Add the DLL name to `binaries=[]` in realisieren-pulse.spec |
 
 ---
 
@@ -342,11 +342,11 @@ Common errors and fixes:
 
 ### 5.1 How Inno Setup works internally
 
-`Syntra.exe` from PyInstaller is just a file — users have to know where to put it.
-Inno Setup creates a proper **Windows installer** (`SyntraSetup.exe`) that:
+`RealisierenPulse.exe` from PyInstaller is just a file — users have to know where to put it.
+Inno Setup creates a proper **Windows installer** (`RealisierenPulseSetup.exe`) that:
 
 - Shows a professional "Next → Next → Install" wizard
-- Copies `Syntra.exe` to `C:\Program Files\Syntra\`
+- Copies `RealisierenPulse.exe` to `C:\Program Files\Realisieren Pulse\`
 - Creates a Start Menu shortcut
 - Creates a Desktop shortcut (optional, user chooses during install)
 - Registers in "Add or Remove Programs" (so users can uninstall cleanly)
@@ -361,19 +361,19 @@ Inno Setup creates a proper **Windows installer** (`SyntraSetup.exe`) that:
 2. Open Inno Setup Compiler
 3. File → Open → select desktop\installer.iss
 4. Build → Compile   (or press F9)
-5. Output: desktop\installer_output\SyntraSetup.exe
+5. Output: desktop\installer_output\RealisierenPulseSetup.exe
 ```
 
-### 5.3 What users see when they run SyntraSetup.exe
+### 5.3 What users see when they run RealisierenPulseSetup.exe
 
 ```
 [Welcome screen]      → Next
 [License (optional)]  → I accept → Next
-[Install folder]      C:\Program Files\Syntra\ → Next
+[Install folder]      C:\Program Files\Realisieren Pulse\ → Next
 [Select tasks]        ☑ Create desktop shortcut → Next
 [Ready to install]    → Install
 [Installing...]       Progress bar
-[Finished]            ☑ Launch Syntra now → Finish
+[Finished]            ☑ Launch Realisieren Pulse now → Finish
 ```
 
 ---
@@ -382,14 +382,14 @@ Inno Setup creates a proper **Windows installer** (`SyntraSetup.exe`) that:
 
 ### What to give users
 
-Share `SyntraSetup.exe` (from `desktop\installer_output\`).
+Share `RealisierenPulseSetup.exe` (from `desktop\installer_output\`).
 They can download it from anywhere — Google Drive, your website, direct link.
 
 ### What the user does
 
-1. Download `SyntraSetup.exe`
+1. Download `RealisierenPulseSetup.exe`
 2. Double-click it → click through the wizard → click Finish
-3. Syntra opens automatically
+3. Realisieren Pulse opens automatically
 4. Type their email + password → Sign In
 5. The app starts tracking immediately
 
@@ -409,11 +409,11 @@ When you release a new version:
 1. Update the version number in `installer.iss`: `#define MyAppVersion "1.0.1"`
 2. Rebuild: `.\build_exe.ps1`
 3. Recompile installer in Inno Setup
-4. Share the new `SyntraSetup.exe` with users
+4. Share the new `RealisierenPulseSetup.exe` with users
 5. Users download it and run it — Inno Setup detects the old version and upgrades it
 
 Inno Setup handles upgrades automatically because of the `AppId` GUID in `installer.iss`.
-When a user runs the new installer, it replaces the old EXE in `Program Files\Syntra\`.
+When a user runs the new installer, it replaces the old EXE in `Program Files\Realisieren Pulse\`.
 
 ### Auto-update (future improvement, not needed for MVP)
 
@@ -428,7 +428,7 @@ Later you can add an auto-update check inside the Python app:
 
 ## Part 8 — Environment Variables Reference
 
-### Backend `.env` (on the server at `/opt/syntra/backend/.env`)
+### Backend `.env` (on the server at `/opt/realisieren-pulse/backend/.env`)
 
 | Variable | What it does | Example |
 |----------|-------------|---------|
@@ -481,14 +481,14 @@ the frontend. Symptom: the website loads but API calls fail with "CORS error" in
 
 # Every update
 ssh root@108.181.168.43
-cd /opt/syntra
+cd /opt/realisieren-pulse
 ./deploy/deploy_backend.sh
 
 # View live logs
-sudo journalctl -u syntra-backend -f
+sudo journalctl -u realisieren-pulse-backend -f
 
 # Restart manually
-sudo systemctl restart syntra-backend
+sudo systemctl restart realisieren-pulse-backend
 ```
 
 ### Frontend (Vercel)
@@ -508,11 +508,11 @@ pip install pyinstaller
 
 # Build EXE
 .\build_exe.ps1
-# Output: desktop\dist\Syntra.exe
+# Output: desktop\dist\RealisierenPulse.exe
 
 # Build installer (after EXE is built)
 # Open Inno Setup → File → Open → installer.iss → Build → Compile
-# Output: desktop\installer_output\SyntraSetup.exe
+# Output: desktop\installer_output\RealisierenPulseSetup.exe
 ```
 
 ---
@@ -527,9 +527,9 @@ pip install pyinstaller
 - [ ] ALLOWED_ORIGINS includes the Vercel URL
 - [ ] `config.ini` points to staging: `api_url = http://108.181.168.43:8000`
 - [ ] `.\build_exe.ps1` completes without errors
-- [ ] `dist\Syntra.exe` launches and login works
+- [ ] `dist\RealisierenPulse.exe` launches and login works
 - [ ] Inno Setup compiles `installer.iss`
-- [ ] `SyntraSetup.exe` installs cleanly on a test PC
+- [ ] `RealisierenPulseSetup.exe` installs cleanly on a test PC
 - [ ] After install: app launches, user can log in, screenshots appear in admin panel
 
 ---
@@ -538,7 +538,7 @@ pip install pyinstaller
 
 ### Backend won't start
 ```bash
-sudo journalctl -u syntra-backend -n 50
+sudo journalctl -u realisieren-pulse-backend -n 50
 # Look for Python errors — usually a missing .env or wrong database URL
 ```
 
@@ -555,11 +555,11 @@ sudo journalctl -u syntra-backend -n 50
 ### EXE crashes silently
 - Run from PowerShell to see error output:
   ```powershell
-  cd "C:\Program Files\Syntra"
-  .\Syntra.exe
+  cd "C:\Program Files\Realisieren Pulse"
+  .\RealisierenPulse.exe
   ```
-- Or rebuild with `console=True` in `syntra.spec` temporarily to see errors
+- Or rebuild with `console=True` in `realisieren-pulse.spec` temporarily to see errors
 
 ### "CORS error" in browser DevTools
 - The Vercel URL is missing from `ALLOWED_ORIGINS` in backend `.env`
-- Fix: add it, then `sudo systemctl restart syntra-backend`
+- Fix: add it, then `sudo systemctl restart realisieren-pulse-backend`

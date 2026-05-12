@@ -131,14 +131,14 @@ export default function AdminPortal() {
 
   return (
     <>
-      <Head><title>Syntra — Admin Portal</title></Head>
+      <Head><title>Realisieren Pulse — Admin Portal</title></Head>
       <div className={styles.page}>
 
         {/* ── Sidebar ──────────────────────────────── */}
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
-            <img src="/app_icon.png" alt="Syntra" className={styles.logoImg} />
-            <span className={styles.logoText}>Syntra</span>
+            <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
+            <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
             <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>

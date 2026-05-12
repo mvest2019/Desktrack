@@ -1,5 +1,5 @@
 """
-config.py — Central configuration for the Syntra desktop app.
+config.py — Central configuration for the Realisieren Pulse desktop app.
 
 HOW API_URL IS RESOLVED (in priority order):
   1. Environment variable:   set API_URL=https://... before running
@@ -21,13 +21,13 @@ from pathlib import Path
 # ── Where the EXE (or script) lives ────────────────────────
 # sys.frozen is True when running as a PyInstaller EXE.
 if getattr(sys, "frozen", False):
-    APP_DIR = Path(sys.executable).parent        # folder containing Syntra.exe
+    APP_DIR = Path(sys.executable).parent        # folder containing Realisieren Pulse.exe
 else:
     APP_DIR = Path(__file__).parent              # folder containing app.py
 
 
 # ── Defaults ────────────────────────────────────────────────
-STAGING_API_URL     = "http://69.62.76.202:8000"  # ✅ public server IP
+STAGING_API_URL     = "http://69.62.76.202:8000"  # production server
 SCREENSHOT_INTERVAL = 180                          # seconds (3 minutes)
 
 
@@ -36,7 +36,7 @@ def _load_config_file() -> dict:
     Read optional config.ini that can sit next to the EXE.
 
     Example config.ini content:
-        [syntra]
+        [realisieren-pulse]
         api_url = https://my-other-server.com:8000
         screenshot_interval = 30
     """
@@ -46,7 +46,7 @@ def _load_config_file() -> dict:
 
     parser = configparser.ConfigParser()
     parser.read(config_path, encoding="utf-8")
-    section = "syntra"
+    section = "realisieren-pulse"
     result = {}
 
     if parser.has_option(section, "api_url"):

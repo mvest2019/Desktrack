@@ -60,7 +60,7 @@ SCREENSHOT_DIR = Path(__file__).parent / "screenshots"
 SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(
-    title="Syntra API",
+    title="Realisieren Pulse API",
     description=(
         "**PostgreSQL** → Users (auth)\n\n"
         "**MongoDB** → Screenshots / raw_samples (telemetry)"

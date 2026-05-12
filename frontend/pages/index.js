@@ -75,7 +75,7 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Syntra — Login</title>
+        <title>Realisieren Pulse — Login</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -89,9 +89,9 @@ export default function LoginPage() {
           {/* Icon + Title */}
           <div className={styles.header}>
             <div className={styles.iconWrap}>
-              <img src="/app_icon.png" alt="Syntra" className={styles.iconImg} />
+              <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.iconImg} />
             </div>
-            <h1 className={styles.title}>Syntra</h1>
+            <h1 className={styles.title}>Realisieren Pulse</h1>
             <p className={styles.subtitle}>Real-time work sync & tracking</p>
           </div>
 

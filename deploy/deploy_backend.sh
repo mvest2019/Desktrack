@@ -3,15 +3,15 @@
 # deploy/deploy_backend.sh
 # =============================================================
 # Your whole project is ONE repo. On the server it lives at:
-#   /opt/syntra/               ← the git repo root
-#   /opt/syntra/backend/       ← FastAPI code (backend/ subfolder)
-#   /opt/syntra/frontend/      ← Next.js code
-#   /opt/syntra/desktop/       ← Windows app code
-#   /opt/syntra/deploy/        ← these scripts
+#   /opt/realisieren-pulse/               ← the git repo root
+#   /opt/realisieren-pulse/backend/       ← FastAPI code (backend/ subfolder)
+#   /opt/realisieren-pulse/frontend/      ← Next.js code
+#   /opt/realisieren-pulse/desktop/       ← Windows app code
+#   /opt/realisieren-pulse/deploy/        ← these scripts
 #
 # Run this every time you push new backend code:
 #   ssh root@YOUR_SERVER_IP
-#   cd /opt/syntra
+#   cd /opt/realisieren-pulse
 #   ./deploy/deploy_backend.sh
 #
 # What it does:
@@ -25,11 +25,11 @@ set -e
 # The repo root = one folder above this script (deploy/ is inside the repo)
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"   # backend/ is already here — no copying needed
-VENV="/opt/syntra/venv"
+VENV="/opt/realisieren-pulse/venv"
 
 echo ""
 echo "============================================"
-echo "  Deploying Syntra Backend"
+echo "  Deploying Realisieren Pulse Backend"
 echo "============================================"
 echo "  Repo root:  $REPO_ROOT"
 echo "  Backend:    $BACKEND_DIR"
@@ -50,15 +50,15 @@ echo "[2/3] Installing Python packages..."
 echo "      Done."
 
 # ── Step 3: Restart the backend service ─────────────────────
-echo "[3/3] Restarting syntra-backend service..."
-systemctl restart syntra-backend
+echo "[3/3] Restarting realisieren-pulse-backend service..."
+systemctl restart realisieren-pulse-backend
 sleep 2
 
-if systemctl is-active --quiet syntra-backend; then
+if systemctl is-active --quiet realisieren-pulse-backend; then
     echo "      Service is running."
 else
     echo "      ERROR: Service failed to start!"
-    echo "      Run: journalctl -u syntra-backend -n 50"
+    echo "      Run: journalctl -u realisieren-pulse-backend -n 50"
     exit 1
 fi
 
