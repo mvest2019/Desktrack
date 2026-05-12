@@ -563,9 +563,9 @@ class DashboardWindow(ctk.CTkToplevel):
         self._app_tracker = AppTracker(log_fn=self._log)
 
         self.title(f"Realisieren Pulse — {self.username}")
-        self.geometry("540x680")
+        self.geometry("540x420")
         self.resizable(False, False)
-        self._center_window(540, 680)
+        self._center_window(540, 420)
         self.after(200, lambda: _set_window_icon(self))
 
         self._build_ui()
@@ -676,19 +676,19 @@ class DashboardWindow(ctk.CTkToplevel):
         status_hdr = ctk.CTkFrame(status_card, fg_color="transparent")
         status_hdr.pack(fill="x", padx=16, pady=(14, 8))
 
-        cam_ic = ctk.CTkFrame(status_hdr, fg_color="#EEF2FF", corner_radius=10,
+        trk_ic = ctk.CTkFrame(status_hdr, fg_color="#EEF2FF", corner_radius=10,
                               width=36, height=36)
-        cam_ic.pack(side="left", padx=(0, 10))
-        cam_ic.pack_propagate(False)
-        ctk.CTkLabel(cam_ic, text="📷", font=ctk.CTkFont(size=16)).place(
+        trk_ic.pack(side="left", padx=(0, 10))
+        trk_ic.pack_propagate(False)
+        ctk.CTkLabel(trk_ic, text="📊", font=ctk.CTkFont(size=16)).place(
             relx=0.5, rely=0.5, anchor="center")
 
-        ctk.CTkLabel(status_hdr, text="Capture Status",
+        ctk.CTkLabel(status_hdr, text="Tracking Status",
                      font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
                      text_color="#0F172A").pack(side="left")
 
         status_row = ctk.CTkFrame(status_card, fg_color="transparent")
-        status_row.pack(fill="x", padx=16, pady=(0, 8))
+        status_row.pack(fill="x", padx=16, pady=(0, 14))
 
         self.status_dot = ctk.CTkLabel(status_row, text="●", text_color="#22C55E",
                                        font=ctk.CTkFont(size=18))
@@ -696,81 +696,12 @@ class DashboardWindow(ctk.CTkToplevel):
 
         self.status_text = ctk.CTkLabel(
             status_row,
-            text=f"  Active — screenshot every {SCREENSHOT_INTERVAL}s",
+            text="  Tracking started",
             font=ctk.CTkFont(family="Lexend Deca", size=12), text_color="#64748B",
         )
         self.status_text.pack(side="left")
 
-        # Progress bar
-        self.progress = ctk.CTkProgressBar(status_card, height=6,
-                                           progress_color="#4F63D2", fg_color="#E2E8F0")
-        self.progress.set(0)
-        self.progress.pack(fill="x", padx=16, pady=(4, 16))
 
-        # ── Stat counters ────────────────────────────────
-        stats_frame = ctk.CTkFrame(inner, fg_color="transparent")
-        stats_frame.pack(fill="x", pady=(0, 12))
-        stats_frame.columnconfigure([0, 1], weight=1)
-
-        # Screenshots taken
-        count_card = ctk.CTkFrame(stats_frame, fg_color="#FFFFFF", corner_radius=14,
-                                  border_color="#E2E8F0", border_width=1)
-        count_card.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
-
-        cam_ic2 = ctk.CTkFrame(count_card, fg_color="#EEF2FF", corner_radius=12,
-                               width=40, height=40)
-        cam_ic2.pack(pady=(14, 6))
-        cam_ic2.pack_propagate(False)
-        ctk.CTkLabel(cam_ic2, text="📷", font=ctk.CTkFont(size=18)).place(
-            relx=0.5, rely=0.5, anchor="center")
-
-        self.count_num = ctk.CTkLabel(count_card, text="0",
-                                      font=ctk.CTkFont(family="Lexend Deca", size=30, weight="bold"),
-                                      text_color="#4F63D2")
-        self.count_num.pack(pady=(0, 2))
-        ctk.CTkLabel(count_card, text="Screenshots",
-                     font=ctk.CTkFont(family="Lexend Deca", size=11),
-                     text_color="#64748B").pack(pady=(0, 14))
-
-        # Last capture time
-        time_card = ctk.CTkFrame(stats_frame, fg_color="#FFFFFF", corner_radius=14,
-                                 border_color="#E2E8F0", border_width=1)
-        time_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
-
-        clk_ic = ctk.CTkFrame(time_card, fg_color="#F5F3FF", corner_radius=12,
-                              width=40, height=40)
-        clk_ic.pack(pady=(14, 6))
-        clk_ic.pack_propagate(False)
-        ctk.CTkLabel(clk_ic, text="🕐", font=ctk.CTkFont(size=18)).place(
-            relx=0.5, rely=0.5, anchor="center")
-
-        self.last_time_label = ctk.CTkLabel(time_card, text="--:--",
-                                            font=ctk.CTkFont(family="Lexend Deca", size=20, weight="bold"),
-                                            text_color="#7C3AED")
-        self.last_time_label.pack(pady=(0, 2))
-        ctk.CTkLabel(time_card, text="Last Capture",
-                     font=ctk.CTkFont(family="Lexend Deca", size=11),
-                     text_color="#64748B").pack(pady=(0, 14))
-
-        # Next capture countdown
-        next_card = self._card(inner)
-        next_card_row = ctk.CTkFrame(next_card, fg_color="transparent")
-        next_card_row.pack(fill="x", padx=16, pady=14)
-
-        cal_ic = ctk.CTkFrame(next_card_row, fg_color="#F0FDF4", corner_radius=10,
-                              width=36, height=36)
-        cal_ic.pack(side="left", padx=(0, 10))
-        cal_ic.pack_propagate(False)
-        ctk.CTkLabel(cal_ic, text="📅", font=ctk.CTkFont(size=16)).place(
-            relx=0.5, rely=0.5, anchor="center")
-
-        ctk.CTkLabel(next_card_row, text="Next screenshot in",
-                     font=ctk.CTkFont(family="Lexend Deca", size=12),
-                     text_color="#64748B").pack(side="left")
-        self.countdown_label = ctk.CTkLabel(next_card_row, text="  15s",
-                                            font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
-                                            text_color="#16A34A")
-        self.countdown_label.pack(side="left")
 
         # ── Logout button ────────────────────────────────
         ctk.CTkButton(
@@ -807,18 +738,7 @@ class DashboardWindow(ctk.CTkToplevel):
 
     # ── Progress bar animation ────────────────────────────
     def _animate_progress(self):
-        """Animate the progress bar to show time until next screenshot"""
-        if not self.is_capturing:
-            return
-        now = time.time()
-        # _last_capture is set after each screenshot
-        elapsed = now - getattr(self, "_last_capture_time", now)
-        fraction = min(elapsed / SCREENSHOT_INTERVAL, 1.0)
-        self.progress.set(fraction)
-        remaining = max(0, SCREENSHOT_INTERVAL - elapsed)
-        self.countdown_label.configure(text=f"  {remaining:.0f}s")
-        # Update every 0.5 seconds
-        self.after(500, self._animate_progress)
+        pass
 
     # ── Screenshot capture loop ───────────────────────────
     def _capture_loop(self):
@@ -906,11 +826,8 @@ class DashboardWindow(ctk.CTkToplevel):
                     break
                 time.sleep(0.5)
 
-    def _update_stats(self, time_str: str, size_kb: int):
-        """Update the count and last-capture labels"""
-        self.count_num.configure(text=str(self.screenshot_count))
-        # Show HH:MM only (shorter fit in the card)
-        self.last_time_label.configure(text=time_str[:5])
+    def _update_stats(self, _time_str: str, _size_kb: int):
+        pass
 
     def _poll_activity_status(self):
         """Periodic poll — kept for future use."""

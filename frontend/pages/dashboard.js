@@ -196,22 +196,6 @@ export default function Dashboard() {
               bg="#EEF2FF"
             />
             <StatCard
-              icon="⏱"
-              label="Capture Interval"
-              value="3 min"
-              sub="Every 3 minutes"
-              color="#7C3AED"
-              bg="#F5F3FF"
-            />
-            <StatCard
-              icon="🕐"
-              label="Last Capture"
-              value={stats.last_capture ? new Date(stats.last_capture).toLocaleTimeString() : "—"}
-              sub="Today"
-              color="#059669"
-              bg="#ECFDF5"
-            />
-            <StatCard
               icon="👤"
               label="Logged in as"
               value={user.username}
