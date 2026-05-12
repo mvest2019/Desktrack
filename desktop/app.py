@@ -106,7 +106,7 @@ def _clear_session():
 
 
 # ── Global theme settings ──────────────────────────────────
-ctk.set_appearance_mode("dark")
+ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
 
@@ -126,7 +126,7 @@ class LoginWindow(ctk.CTk):
         self.geometry("440x620")
         self.resizable(False, False)
         self._center_window(440, 620)
-        ctk.set_appearance_mode("dark")
+        ctk.set_appearance_mode("light")
         _set_window_icon(self)
         self._build_ui()
 
@@ -144,28 +144,28 @@ class LoginWindow(ctk.CTk):
         self.geometry(f"{w}x{h}+{x}+{y}")
 
     def _make_field_row(self, parent, icon, var, placeholder, show=""):
-        row = ctk.CTkFrame(parent, fg_color="#1e2130", corner_radius=10,
-                           border_color="#2e3347", border_width=1, height=50)
+        row = ctk.CTkFrame(parent, fg_color="#F8FAFC", corner_radius=10,
+                           border_color="#E2E8F0", border_width=1, height=50)
         row.pack(fill="x", pady=(4, 0))
         row.pack_propagate(False)
         ctk.CTkLabel(row, text=icon, font=ctk.CTkFont(size=15),
-                     text_color="#5a6180", width=40).pack(side="left", padx=(10, 0))
+                     text_color="#94A3B8", width=40).pack(side="left", padx=(10, 0))
         entry = ctk.CTkEntry(row, textvariable=var, placeholder_text=placeholder,
                              show=show, font=ctk.CTkFont(size=13),
                              fg_color="transparent", border_width=0,
-                             text_color="#e0e4f0", placeholder_text_color="#4a5270")
+                             text_color="#0F172A", placeholder_text_color="#94A3B8")
         entry.pack(side="left", fill="both", expand=True, padx=(4, 10))
         return entry
 
     def _build_ui(self):
         """Create both Sign In and Create Account views inside the same window."""
-        self.configure(fg_color="#161b27")
+        self.configure(fg_color="#FFFFFF")
 
         # ── Shared icon header (always visible) ──────────
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.pack(pady=(36, 0))
 
-        icon_box = ctk.CTkFrame(header, fg_color="#1e2436", corner_radius=20,
+        icon_box = ctk.CTkFrame(header, fg_color="#F1F5F9", corner_radius=20,
                                 width=96, height=96)
         icon_box.pack()
         icon_box.pack_propagate(False)
@@ -174,43 +174,43 @@ class LoginWindow(ctk.CTk):
             ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
         except Exception:
             ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(size=44, weight="bold"),
-                         text_color="#4f8ef7").place(relx=0.5, rely=0.5, anchor="center")
+                         text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
 
         ctk.CTkLabel(header, text="Realisieren Pulse",
-                     font=ctk.CTkFont(size=26, weight="bold"),
-                     text_color="#ffffff").pack(pady=(12, 0))
+                     font=ctk.CTkFont(size=24, weight="bold"),
+                     text_color="#0F172A").pack(pady=(12, 0))
 
         # ── Sign In frame ─────────────────────────────────
         self._login_frame = ctk.CTkFrame(self, fg_color="transparent")
         self._login_frame.pack(fill="both", expand=True, padx=44)
 
-        ctk.CTkLabel(self._login_frame, text="Real-time work sync & tracking",
+        ctk.CTkLabel(self._login_frame, text="Sign in to your workspace",
                      font=ctk.CTkFont(size=13),
-                     text_color="#6b7494").pack(pady=(4, 20))
+                     text_color="#64748B").pack(pady=(4, 20))
 
         ctk.CTkLabel(self._login_frame, text="Email Address", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x")
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x")
         self.email_var = tk.StringVar()
         self.email_entry = self._make_field_row(
             self._login_frame, "✉", self.email_var, "you@example.com")
 
         ctk.CTkLabel(self._login_frame, text="Password", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x", pady=(14, 0))
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(14, 0))
         self.password_var = tk.StringVar()
         self.password_entry = self._make_field_row(
             self._login_frame, "🔒", self.password_var, "Enter your password", show="•")
 
         self.error_var = tk.StringVar(value="")
         ctk.CTkLabel(self._login_frame, textvariable=self.error_var,
-                     text_color="#FF6B6B", font=ctk.CTkFont(size=12),
+                     text_color="#DC2626", font=ctk.CTkFont(size=12),
                      wraplength=360).pack(pady=(8, 0))
 
         self.login_btn = ctk.CTkButton(
             self._login_frame, text="Sign In  →", height=50,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#4f8ef7", hover_color="#3a7ae8",
+            fg_color="#4F63D2", hover_color="#4050C0",
             corner_radius=12, command=self._on_login_click,
         )
         self.login_btn.pack(fill="x", pady=(12, 0))
@@ -218,11 +218,11 @@ class LoginWindow(ctk.CTk):
         foot1 = ctk.CTkFrame(self._login_frame, fg_color="transparent")
         foot1.pack(pady=(10, 0))
         ctk.CTkLabel(foot1, text="Don't have an account? ",
-                     font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
+                     font=ctk.CTkFont(size=12), text_color="#64748B").pack(side="left")
         ctk.CTkButton(foot1, text="Create one",
                       font=ctk.CTkFont(size=12, weight="bold"),
-                      text_color="#4f8ef7", fg_color="transparent",
-                      hover_color="#1a2035", border_width=0, height=22,
+                      text_color="#4F63D2", fg_color="transparent",
+                      hover_color="#EEF2FF", border_width=0, height=22,
                       width=70, command=self._show_register).pack(side="left")
 
         # ── Create Account frame (hidden initially) ───────
@@ -230,38 +230,38 @@ class LoginWindow(ctk.CTk):
 
         ctk.CTkLabel(self._reg_frame, text="Create your account",
                      font=ctk.CTkFont(size=13),
-                     text_color="#6b7494").pack(pady=(4, 20), padx=44)
+                     text_color="#64748B").pack(pady=(4, 20), padx=44)
 
         reg_inner = ctk.CTkFrame(self._reg_frame, fg_color="transparent")
         reg_inner.pack(fill="both", expand=True, padx=44)
 
         ctk.CTkLabel(reg_inner, text="Full Name", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x")
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x")
         self.reg_name_var = tk.StringVar()
         self._make_field_row(reg_inner, "👤", self.reg_name_var, "Your name")
 
         ctk.CTkLabel(reg_inner, text="Email Address", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x", pady=(12, 0))
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
         self.reg_email_var = tk.StringVar()
         self._make_field_row(reg_inner, "✉", self.reg_email_var, "you@example.com")
 
         ctk.CTkLabel(reg_inner, text="Password", anchor="w",
-                     font=ctk.CTkFont(size=13, weight="bold"),
-                     text_color="#c8cde0").pack(fill="x", pady=(12, 0))
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
         self.reg_pass_var = tk.StringVar()
         self._make_field_row(reg_inner, "🔒", self.reg_pass_var, "Min 6 characters", show="•")
 
         self.reg_error_var = tk.StringVar(value="")
         ctk.CTkLabel(reg_inner, textvariable=self.reg_error_var,
-                     text_color="#FF6B6B", font=ctk.CTkFont(size=12),
+                     text_color="#DC2626", font=ctk.CTkFont(size=12),
                      wraplength=360).pack(pady=(8, 0))
 
         self.reg_btn = ctk.CTkButton(
             reg_inner, text="Create Account  →", height=50,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#4f8ef7", hover_color="#3a7ae8",
+            fg_color="#4F63D2", hover_color="#4050C0",
             corner_radius=12, command=self._on_register_click,
         )
         self.reg_btn.pack(fill="x", pady=(12, 0))
@@ -269,11 +269,11 @@ class LoginWindow(ctk.CTk):
         foot2 = ctk.CTkFrame(reg_inner, fg_color="transparent")
         foot2.pack(pady=(10, 0))
         ctk.CTkLabel(foot2, text="Already have an account? ",
-                     font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
+                     font=ctk.CTkFont(size=12), text_color="#64748B").pack(side="left")
         ctk.CTkButton(foot2, text="Sign in",
                       font=ctk.CTkFont(size=12, weight="bold"),
-                      text_color="#4f8ef7", fg_color="transparent",
-                      hover_color="#1a2035", border_width=0, height=22,
+                      text_color="#4F63D2", fg_color="transparent",
+                      hover_color="#EEF2FF", border_width=0, height=22,
                       width=50, command=self._show_login).pack(side="left")
 
         self.bind("<Return>", lambda _: self._on_login_click())
@@ -286,7 +286,7 @@ class LoginWindow(ctk.CTk):
         self.reg_email_var.set("")
         self.reg_pass_var.set("")
         self.reg_error_var.set("")
-        self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4f8ef7")
+        self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4F63D2")
         self.unbind("<Return>")
         self.bind("<Return>", lambda _: self._on_register_click())
 
@@ -405,7 +405,7 @@ class LoginWindow(ctk.CTk):
 
     def _reg_failure(self, msg):
         self.reg_error_var.set(msg)
-        self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4f8ef7")
+        self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4F63D2")
 
 
 
@@ -429,7 +429,7 @@ class StartWindow(ctk.CTkToplevel):
         self.geometry("440x500")
         self.resizable(False, False)
         self._center_window(440, 500)
-        self.configure(fg_color="#161b27")
+        self.configure(fg_color="#FFFFFF")
         self.after(200, lambda: _set_window_icon(self))
 
         self._build_ui()
@@ -441,64 +441,78 @@ class StartWindow(ctk.CTkToplevel):
         self.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
 
     def _build_ui(self):
+        self.configure(fg_color="#EBF0FF")
         inner = ctk.CTkFrame(self, fg_color="transparent")
-        inner.pack(expand=True, fill="both", padx=44, pady=0)
+        inner.pack(expand=True, fill="both", padx=40, pady=0)
 
-        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
+        ctk.CTkFrame(inner, fg_color="transparent", height=24).pack()
 
-        # Icon
-        icon_box = ctk.CTkFrame(inner, fg_color="#1e2436", corner_radius=20,
-                                width=96, height=96)
+        # Icon in white rounded box
+        icon_box = ctk.CTkFrame(inner, fg_color="#FFFFFF", corner_radius=22,
+                                width=100, height=100)
         icon_box.pack()
         icon_box.pack_propagate(False)
         try:
-            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(76, 76))
+            _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(82, 82))
             ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
         except Exception:
-            ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(size=44, weight="bold"),
-                         text_color="#4f8ef7").place(relx=0.5, rely=0.5, anchor="center")
+            ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(family="Lexend Deca", size=44, weight="bold"),
+                         text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
 
         # Greeting
         name = self.user_data.get("username", "there")
         ctk.CTkLabel(inner, text="Welcome back,",
-                     font=ctk.CTkFont(size=14), text_color="#6b7494").pack(pady=(18, 0))
+                     font=ctk.CTkFont(family="Lexend Deca", size=14),
+                     text_color="#64748B").pack(pady=(20, 0))
         ctk.CTkLabel(inner, text=name,
-                     font=ctk.CTkFont(size=30, weight="bold"),
-                     text_color="#ffffff").pack(pady=(2, 6))
+                     font=ctk.CTkFont(family="Lexend Deca", size=30, weight="bold"),
+                     text_color="#0F172A").pack(pady=(2, 0))
+        ctk.CTkLabel(inner, text="Let's continue your productive journey.",
+                     font=ctk.CTkFont(family="Lexend Deca", size=12),
+                     text_color="#94A3B8").pack(pady=(4, 20))
 
-        # Project / designation badge
-        project     = self.user_data.get("project", "")
-        designation = self.user_data.get("designation", "")
-        badge_text  = "  ·  ".join(filter(None, [designation, project]))
-        if badge_text:
-            badge_frame = ctk.CTkFrame(inner, fg_color="#1a2840", corner_radius=20)
-            badge_frame.pack(pady=(0, 26))
-            ctk.CTkLabel(badge_frame, text=badge_text,
-                         font=ctk.CTkFont(size=12), text_color="#4a9eff",
-                         padx=14, pady=6).pack()
-        else:
-            ctk.CTkFrame(inner, fg_color="transparent", height=26).pack()
-
-        # Start button
+        # Start Monitoring button
         ctk.CTkButton(
-            inner, text="▶   Start Monitoring", height=56,
-            font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color="#4f8ef7", hover_color="#3a7ae8",
+            inner, text="▶   Start Monitoring", height=54,
+            font=ctk.CTkFont(family="Lexend Deca", size=15, weight="bold"),
+            fg_color="#4F63D2", hover_color="#4050C0",
             corner_radius=14, command=self._start,
-        ).pack(fill="x")
+        ).pack(fill="x", pady=(0, 14))
 
-        # Sign out link
+        # Security info card
+        sec_card = ctk.CTkFrame(inner, fg_color="#FFFFFF", corner_radius=14,
+                                border_color="#E2E8F0", border_width=1)
+        sec_card.pack(fill="x", pady=(0, 14))
+        sec_row = ctk.CTkFrame(sec_card, fg_color="transparent")
+        sec_row.pack(fill="x", padx=14, pady=14)
+        shield_ic = ctk.CTkFrame(sec_row, fg_color="#EEF2FF", corner_radius=10,
+                                 width=42, height=42)
+        shield_ic.pack(side="left", padx=(0, 12))
+        shield_ic.pack_propagate(False)
+        ctk.CTkLabel(shield_ic, text="🛡", font=ctk.CTkFont(size=20),
+                     text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
+        txt_col = ctk.CTkFrame(sec_row, fg_color="transparent")
+        txt_col.pack(side="left", fill="both", expand=True)
+        ctk.CTkLabel(txt_col, text="Your activity is secure", anchor="w",
+                     font=ctk.CTkFont(family="Lexend Deca", size=12, weight="bold"),
+                     text_color="#0F172A").pack(anchor="w")
+        ctk.CTkLabel(txt_col, text="Realisieren Pulse runs in the background\nand keeps your data safe.",
+                     anchor="w", font=ctk.CTkFont(family="Lexend Deca", size=11),
+                     text_color="#94A3B8", justify="left").pack(anchor="w", pady=(2, 0))
+
+        # Sign out footer
         foot = ctk.CTkFrame(inner, fg_color="transparent")
-        foot.pack(pady=(16, 0))
+        foot.pack(pady=(4, 0))
         ctk.CTkLabel(foot, text="Not you?  ",
-                     font=ctk.CTkFont(size=12), text_color="#6b7494").pack(side="left")
+                     font=ctk.CTkFont(family="Lexend Deca", size=13),
+                     text_color="#64748B").pack(side="left")
         ctk.CTkButton(foot, text="Sign out",
-                      font=ctk.CTkFont(size=12, weight="bold"),
-                      text_color="#f87171", fg_color="transparent",
-                      hover_color="#1a2035", border_width=0, height=22, width=60,
+                      font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
+                      text_color="#4F63D2", fg_color="transparent",
+                      hover_color="#EEF2FF", border_width=0, height=24, width=70,
                       command=self._sign_out).pack(side="left")
 
-        ctk.CTkFrame(inner, fg_color="transparent", height=1).pack(expand=True)
+        ctk.CTkFrame(inner, fg_color="transparent", height=8).pack()
 
     def _start(self):
         self.withdraw()
@@ -591,121 +605,184 @@ class DashboardWindow(ctk.CTkToplevel):
         """Build the dashboard layout"""
 
         # ── Top header bar ───────────────────────────────
-        header = ctk.CTkFrame(self, height=70, corner_radius=0, fg_color=("#1a1a2e", "#1a1a2e"))
+        header = ctk.CTkFrame(self, height=70, corner_radius=0, fg_color="#FFFFFF",
+                              border_color="#E2E8F0", border_width=1)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         try:
-            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(40, 40))
+            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(36, 36))
             ctk.CTkLabel(header, image=_hdr_img, text="  Realisieren Pulse",
-                         compound="left",
-                         font=ctk.CTkFont(size=19, weight="bold")).pack(side="left", padx=20, pady=15)
+                         compound="left", text_color="#0F172A",
+                         font=ctk.CTkFont(family="Lexend Deca", size=17, weight="bold")).pack(side="left", padx=20, pady=17)
         except Exception:
-            ctk.CTkLabel(
-                header,
-                text="R  Realisieren Pulse",
-                font=ctk.CTkFont(size=19, weight="bold"),
-            ).pack(side="left", padx=20, pady=15)
+            ctk.CTkLabel(header, text="R  Realisieren Pulse",
+                         font=ctk.CTkFont(family="Lexend Deca", size=17, weight="bold"),
+                         text_color="#0F172A").pack(side="left", padx=20, pady=17)
 
-        # Live indicator
-        live_frame = ctk.CTkFrame(header, fg_color="transparent")
-        live_frame.pack(side="right", padx=20)
-        ctk.CTkLabel(live_frame, text="●", text_color="#00FF88", font=ctk.CTkFont(size=16)).pack(side="left")
-        ctk.CTkLabel(live_frame, text=" MONITORING", font=ctk.CTkFont(size=11, weight="bold"), text_color="#00FF88").pack(side="left")
+        # MONITORING pill
+        live_frame = ctk.CTkFrame(header, fg_color="#F0FDF4", corner_radius=20)
+        live_frame.pack(side="right", padx=20, pady=20)
+        ctk.CTkLabel(live_frame, text="●", text_color="#22C55E",
+                     font=ctk.CTkFont(size=11), padx=4).pack(side="left", padx=(10, 2))
+        ctk.CTkLabel(live_frame, text="MONITORING",
+                     font=ctk.CTkFont(family="Lexend Deca", size=10, weight="bold"),
+                     text_color="#16A34A").pack(side="left", padx=(0, 10))
 
         # ── Welcome banner (auto-hides after 4 s) ────────
-        self._welcome_bar = ctk.CTkFrame(self, height=42, corner_radius=0,
-                                         fg_color=("#0d1a30", "#0d1a30"))
+        self._welcome_bar = ctk.CTkFrame(self, height=40, corner_radius=0, fg_color="#EEF2FF")
         self._welcome_bar.pack(fill="x")
         self._welcome_bar.pack_propagate(False)
         ctk.CTkLabel(
             self._welcome_bar,
             text=f"👋  Welcome back, {self.username}!   Realisieren Pulse is monitoring your activity.",
-            font=ctk.CTkFont(size=12),
-            text_color="#5da8ff",
+            font=ctk.CTkFont(family="Lexend Deca", size=12), text_color="#4F63D2",
         ).pack(expand=True)
         self.after(4000, lambda: self._welcome_bar.pack_forget())
 
         # ── Content area ─────────────────────────────────
-        content = ctk.CTkFrame(self, fg_color="transparent")
-        content.pack(fill="both", expand=True, padx=20, pady=16)
+        content = ctk.CTkFrame(self, fg_color="#F5F7FA")
+        content.pack(fill="both", expand=True, padx=0, pady=0)
 
-        # ── Welcome card ─────────────────────────────────
-        self._card(
-            content,
-            children_fn=lambda f: [
-                ctk.CTkLabel(f, text=f"👋  Welcome, {self.username}!", font=ctk.CTkFont(size=16, weight="bold")).pack(anchor="w", padx=16, pady=(14, 4)),
-                ctk.CTkLabel(f, text=self.user_data["email"], font=ctk.CTkFont(size=12), text_color="gray").pack(anchor="w", padx=16, pady=(0, 14)),
-            ]
-        )
+        inner = ctk.CTkFrame(content, fg_color="transparent")
+        inner.pack(fill="both", expand=True, padx=20, pady=16)
+
+        # ── User card with avatar ─────────────────────────
+        user_card = self._card(inner)
+        user_row = ctk.CTkFrame(user_card, fg_color="transparent")
+        user_row.pack(fill="x", padx=16, pady=14)
+
+        initials = "".join(w[0].upper() for w in self.username.split()[:2]) or "U"
+        avatar = ctk.CTkFrame(user_row, fg_color="#EEF2FF", corner_radius=22,
+                              width=44, height=44)
+        avatar.pack(side="left", padx=(0, 12))
+        avatar.pack_propagate(False)
+        ctk.CTkLabel(avatar, text=initials,
+                     font=ctk.CTkFont(family="Lexend Deca", size=16, weight="bold"),
+                     text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
+
+        info_col = ctk.CTkFrame(user_row, fg_color="transparent")
+        info_col.pack(side="left", fill="both", expand=True)
+        ctk.CTkLabel(info_col, text=self.username, anchor="w",
+                     font=ctk.CTkFont(family="Lexend Deca", size=15, weight="bold"),
+                     text_color="#0F172A").pack(anchor="w")
+        ctk.CTkLabel(info_col, text=self.user_data["email"], anchor="w",
+                     font=ctk.CTkFont(family="Lexend Deca", size=11),
+                     text_color="#64748B").pack(anchor="w", pady=(2, 0))
 
         # ── Status card ──────────────────────────────────
-        status_card = self._card(content)
+        status_card = self._card(inner)
 
-        ctk.CTkLabel(
-            status_card, text="Capture Status",
-            font=ctk.CTkFont(size=14, weight="bold"),
-        ).pack(anchor="w", padx=16, pady=(14, 8))
+        status_hdr = ctk.CTkFrame(status_card, fg_color="transparent")
+        status_hdr.pack(fill="x", padx=16, pady=(14, 8))
+
+        cam_ic = ctk.CTkFrame(status_hdr, fg_color="#EEF2FF", corner_radius=10,
+                              width=36, height=36)
+        cam_ic.pack(side="left", padx=(0, 10))
+        cam_ic.pack_propagate(False)
+        ctk.CTkLabel(cam_ic, text="📷", font=ctk.CTkFont(size=16)).place(
+            relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkLabel(status_hdr, text="Capture Status",
+                     font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
+                     text_color="#0F172A").pack(side="left")
 
         status_row = ctk.CTkFrame(status_card, fg_color="transparent")
-        status_row.pack(fill="x", padx=16, pady=(0, 14))
+        status_row.pack(fill="x", padx=16, pady=(0, 8))
 
-        self.status_dot = ctk.CTkLabel(status_row, text="●", text_color="#00FF88", font=ctk.CTkFont(size=18))
+        self.status_dot = ctk.CTkLabel(status_row, text="●", text_color="#22C55E",
+                                       font=ctk.CTkFont(size=18))
         self.status_dot.pack(side="left")
 
         self.status_text = ctk.CTkLabel(
             status_row,
             text=f"  Active — screenshot every {SCREENSHOT_INTERVAL}s",
-            font=ctk.CTkFont(size=13),
-            text_color="gray",
+            font=ctk.CTkFont(family="Lexend Deca", size=12), text_color="#64748B",
         )
         self.status_text.pack(side="left")
 
-        # Progress bar (just visual — fills up between each screenshot)
-        self.progress = ctk.CTkProgressBar(status_card, height=4)
+        # Progress bar
+        self.progress = ctk.CTkProgressBar(status_card, height=6,
+                                           progress_color="#4F63D2", fg_color="#E2E8F0")
         self.progress.set(0)
-        self.progress.pack(fill="x", padx=16, pady=(0, 16))
+        self.progress.pack(fill="x", padx=16, pady=(4, 16))
 
         # ── Stat counters ────────────────────────────────
-        stats_frame = ctk.CTkFrame(content, fg_color="transparent")
+        stats_frame = ctk.CTkFrame(inner, fg_color="transparent")
         stats_frame.pack(fill="x", pady=(0, 12))
         stats_frame.columnconfigure([0, 1], weight=1)
 
         # Screenshots taken
-        count_card = ctk.CTkFrame(stats_frame, fg_color=("#1e1e30", "#1e1e30"), corner_radius=14)
+        count_card = ctk.CTkFrame(stats_frame, fg_color="#FFFFFF", corner_radius=14,
+                                  border_color="#E2E8F0", border_width=1)
         count_card.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
-        self.count_num = ctk.CTkLabel(count_card, text="0", font=ctk.CTkFont(size=32, weight="bold"), text_color="#4A9EFF")
-        self.count_num.pack(pady=(16, 2))
-        ctk.CTkLabel(count_card, text="Screenshots Taken", font=ctk.CTkFont(size=11), text_color="gray").pack(pady=(0, 16))
+        cam_ic2 = ctk.CTkFrame(count_card, fg_color="#EEF2FF", corner_radius=12,
+                               width=40, height=40)
+        cam_ic2.pack(pady=(14, 6))
+        cam_ic2.pack_propagate(False)
+        ctk.CTkLabel(cam_ic2, text="📷", font=ctk.CTkFont(size=18)).place(
+            relx=0.5, rely=0.5, anchor="center")
+
+        self.count_num = ctk.CTkLabel(count_card, text="0",
+                                      font=ctk.CTkFont(family="Lexend Deca", size=30, weight="bold"),
+                                      text_color="#4F63D2")
+        self.count_num.pack(pady=(0, 2))
+        ctk.CTkLabel(count_card, text="Screenshots",
+                     font=ctk.CTkFont(family="Lexend Deca", size=11),
+                     text_color="#64748B").pack(pady=(0, 14))
 
         # Last capture time
-        time_card = ctk.CTkFrame(stats_frame, fg_color=("#1e1e30", "#1e1e30"), corner_radius=14)
+        time_card = ctk.CTkFrame(stats_frame, fg_color="#FFFFFF", corner_radius=14,
+                                 border_color="#E2E8F0", border_width=1)
         time_card.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
 
-        self.last_time_label = ctk.CTkLabel(time_card, text="--:--:--", font=ctk.CTkFont(size=24, weight="bold"), text_color="#A78BFA")
-        self.last_time_label.pack(pady=(16, 2))
-        ctk.CTkLabel(time_card, text="Last Capture", font=ctk.CTkFont(size=11), text_color="gray").pack(pady=(0, 16))
+        clk_ic = ctk.CTkFrame(time_card, fg_color="#F5F3FF", corner_radius=12,
+                              width=40, height=40)
+        clk_ic.pack(pady=(14, 6))
+        clk_ic.pack_propagate(False)
+        ctk.CTkLabel(clk_ic, text="🕐", font=ctk.CTkFont(size=18)).place(
+            relx=0.5, rely=0.5, anchor="center")
+
+        self.last_time_label = ctk.CTkLabel(time_card, text="--:--",
+                                            font=ctk.CTkFont(family="Lexend Deca", size=20, weight="bold"),
+                                            text_color="#7C3AED")
+        self.last_time_label.pack(pady=(0, 2))
+        ctk.CTkLabel(time_card, text="Last Capture",
+                     font=ctk.CTkFont(family="Lexend Deca", size=11),
+                     text_color="#64748B").pack(pady=(0, 14))
 
         # Next capture countdown
-        next_card = self._card(content)
+        next_card = self._card(inner)
         next_card_row = ctk.CTkFrame(next_card, fg_color="transparent")
-        next_card_row.pack(fill="x", padx=16, pady=12)
-        ctk.CTkLabel(next_card_row, text="⏱  Next screenshot in:", font=ctk.CTkFont(size=13), text_color="gray").pack(side="left")
-        self.countdown_label = ctk.CTkLabel(next_card_row, text="15s", font=ctk.CTkFont(size=13, weight="bold"), text_color="#34D399")
-        self.countdown_label.pack(side="left", padx=6)
+        next_card_row.pack(fill="x", padx=16, pady=14)
+
+        cal_ic = ctk.CTkFrame(next_card_row, fg_color="#F0FDF4", corner_radius=10,
+                              width=36, height=36)
+        cal_ic.pack(side="left", padx=(0, 10))
+        cal_ic.pack_propagate(False)
+        ctk.CTkLabel(cal_ic, text="📅", font=ctk.CTkFont(size=16)).place(
+            relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkLabel(next_card_row, text="Next screenshot in",
+                     font=ctk.CTkFont(family="Lexend Deca", size=12),
+                     text_color="#64748B").pack(side="left")
+        self.countdown_label = ctk.CTkLabel(next_card_row, text="  15s",
+                                            font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
+                                            text_color="#16A34A")
+        self.countdown_label.pack(side="left")
 
         # ── Logout button ────────────────────────────────
         ctk.CTkButton(
-            content,
+            inner,
             text="🚪  Logout & Stop Capture",
             height=46,
-            fg_color="transparent",
+            fg_color="#FEF2F2",
             border_width=1,
-            border_color=("#444", "#444"),
-            text_color=("gray40", "gray60"),
-            hover_color=("#2a2a2a", "#2a2a2a"),
-            font=ctk.CTkFont(size=13),
+            border_color="#FECACA",
+            text_color="#EF4444",
+            hover_color="#FEE2E2",
+            font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
             command=self._logout,
         ).pack(fill="x", pady=(4, 8))
 
@@ -713,8 +790,10 @@ class DashboardWindow(ctk.CTkToplevel):
         """Helper to create a consistent card frame"""
         card = ctk.CTkFrame(
             parent,
-            fg_color=("#1e1e30", "#1e1e30"),
+            fg_color="#FFFFFF",
             corner_radius=14,
+            border_color="#E2E8F0",
+            border_width=1,
         )
         card.pack(fill="x", pady=(0, 12), padx=padx)
         if children_fn:
@@ -737,7 +816,7 @@ class DashboardWindow(ctk.CTkToplevel):
         fraction = min(elapsed / SCREENSHOT_INTERVAL, 1.0)
         self.progress.set(fraction)
         remaining = max(0, SCREENSHOT_INTERVAL - elapsed)
-        self.countdown_label.configure(text=f"{remaining:.0f}s")
+        self.countdown_label.configure(text=f"  {remaining:.0f}s")
         # Update every 0.5 seconds
         self.after(500, self._animate_progress)
 
@@ -830,7 +909,8 @@ class DashboardWindow(ctk.CTkToplevel):
     def _update_stats(self, time_str: str, size_kb: int):
         """Update the count and last-capture labels"""
         self.count_num.configure(text=str(self.screenshot_count))
-        self.last_time_label.configure(text=time_str)
+        # Show HH:MM only (shorter fit in the card)
+        self.last_time_label.configure(text=time_str[:5])
 
     def _poll_activity_status(self):
         """Periodic poll — kept for future use."""

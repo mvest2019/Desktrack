@@ -1,8 +1,4 @@
-// ============================================================
-// pages/index.js — Login Page
-// ============================================================
-// This is the first page users see. It sends email + password
-// to the FastAPI backend and redirects to the dashboard on success.
+// pages/index.js — Login Page (split-screen dark layout)
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
@@ -13,7 +9,6 @@ import API from "../config";
 export default function LoginPage() {
   const router = useRouter();
 
-  // If already logged in, skip the login page
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) {
@@ -22,50 +17,31 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Form state — tracks what the user types
-  const [email, setEmail]       = useState("");
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(false);
+  const [error,    setError]    = useState("");
+  const [loading,  setLoading]  = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  // ── Handle login form submit ─────────────────────────────
   async function handleLogin(e) {
-    e.preventDefault();   // Don't reload the page
+    e.preventDefault();
     setError("");
-
-    // Basic validation
-    if (!email || !password) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
+    if (!email || !password) { setError("Please fill in all fields."); return; }
     setLoading(true);
-
     try {
-      // Call the FastAPI backend
-      const res = await fetch(`${API}/api/login`, {
+      const res  = await fetch(`${API}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
       const data = await res.json();
-
       if (res.ok && data.success) {
-        // ✅ Login success — save user data and route by role
         localStorage.setItem("user", JSON.stringify(data));
-        if (data.user_type === "admin") {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
+        router.push(data.user_type === "admin" ? "/admin" : "/dashboard");
       } else {
-        // ❌ Login failed — show error message from API
         setError(data.detail || "Login failed. Please try again.");
       }
-    } catch (err) {
-      // Network error (backend not running, etc.)
+    } catch {
       setError("Cannot connect to server. Is the backend running?");
     } finally {
       setLoading(false);
@@ -80,96 +56,83 @@ export default function LoginPage() {
       </Head>
 
       <div className={styles.page}>
-        {/* Animated background blobs */}
-        <div className={styles.blob1} />
-        <div className={styles.blob2} />
-
-        {/* Login Card */}
-        <div className={styles.card}>
-          {/* Icon + Title */}
-          <div className={styles.header}>
-            <div className={styles.iconWrap}>
-              <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.iconImg} />
+        {/* ── Hero panel (left) ─────────────────────────── */}
+        <div className={styles.heroPanel}>
+          <div className={styles.heroInner}>
+            <div className={styles.heroBrand}>
+              <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.heroBrandImg} />
+              <div className={styles.heroBrandText}>
+                <div className={styles.heroBrandName}>Realisieren</div>
+                <div className={styles.heroBrandSub}>PULSE</div>
+              </div>
             </div>
-            <h1 className={styles.title}>Realisieren Pulse</h1>
-            <p className={styles.subtitle}>Real-time work sync & tracking</p>
+
+            <div className={styles.heroPill}>⚡ AI-powered workforce intelligence</div>
+
+            <h1 className={styles.heroTitle}>
+              Track every second of <span className={styles.heroAccent}>productivity.</span>
+            </h1>
+            <p className={styles.heroDesc}>
+              Empower your team with smarter workflows, seamless collaboration, and AI-powered task analysis that helps turn daily work into actionable insights.
+            </p>
+
           </div>
+        </div>
 
-          {/* Form */}
-          <form onSubmit={handleLogin} className={styles.form}>
-            {/* Email field */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Email Address</label>
-              <div className={styles.inputWrap}>
-                <span className={styles.inputIcon}>✉</span>
-                <input
-                  type="email"
-                  className={styles.input}
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  disabled={loading}
-                />
+        {/* ── Form panel (right) ────────────────────────── */}
+        <div className={styles.formPanel}>
+          <div className={styles.formInner}>
+            <h2 className={styles.formTitle}>Welcome back</h2>
+            <p className={styles.formSubtitle}>Sign in to continue to your workspace.</p>
+
+            <form onSubmit={handleLogin} className={styles.form}>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Email Address</label>
+                <div className={styles.inputWrap}>
+                  <span className={styles.inputIcon}>✉</span>
+                  <input
+                    type="email"
+                    className={styles.input}
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    disabled={loading}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Password field */}
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Password</label>
-              <div className={styles.inputWrap}>
-                <span className={styles.inputIcon}>🔒</span>
-                <input
-                  type={showPass ? "text" : "password"}
-                  className={styles.input}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  className={styles.eyeBtn}
-                  onClick={() => setShowPass(!showPass)}
-                  tabIndex={-1}
-                >
-                  {showPass ? "🙈" : "👁"}
-                </button>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label}>Password</label>
+                <div className={styles.inputWrap}>
+                  <span className={styles.inputIcon}>🔒</span>
+                  <input
+                    type={showPass ? "text" : "password"}
+                    className={styles.input}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    disabled={loading}
+                  />
+                  <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)} tabIndex={-1}>
+                    {showPass ? "🙈" : "👁"}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Error message */}
-            {error && (
-              <div className={styles.errorBox}>
-                <span>⚠ {error}</span>
-              </div>
-            )}
+              {error && <div className={styles.errorBox}><span>⚠ {error}</span></div>}
 
-            {/* Submit button */}
-            <button
-              type="submit"
-              className={`${styles.loginBtn} ${loading ? styles.loading : ""}`}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className={styles.spinner} />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In →"
-              )}
-            </button>
-          </form>
+              <button type="submit" className={styles.loginBtn} disabled={loading}>
+                {loading ? (<><span className={styles.spinner} /> Signing in...</>) : "Sign In →"}
+              </button>
+            </form>
 
-          {/* Register link */}
-          <p className={styles.registerText}>
-            No account?{" "}
-            <a href="/register" className={styles.registerLink}>
-              Create one here
-            </a>
-          </p>
+            <p className={styles.registerText}>
+              New to Realisieren?{" "}
+              <a href="/register" className={styles.registerLink}>Create an account</a>
+            </p>
+          </div>
         </div>
       </div>
     </>

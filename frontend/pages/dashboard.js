@@ -163,14 +163,25 @@ export default function Dashboard() {
         <main className={styles.main}>
           <div className={styles.topBar}>
             <div>
-              <h1 className={styles.pageTitle}>Dashboard</h1>
+              <h1 className={styles.pageTitle}>
+                {(() => {
+                  const h = new Date().getHours();
+                  const greet = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+                  return `${greet}, ${user.username?.split(" ")[0]} 👋`;
+                })()}
+              </h1>
               <p className={styles.pageSubtitle}>
-                Monitoring active — screenshots every 3 minutes
+                Here&apos;s what&apos;s happening with your <strong>productivity</strong> today.
               </p>
             </div>
-            <div className={styles.statusPill}>
-              <span className={styles.statusDot} />
-              Live
+            <div className={styles.topBarRight}>
+              <span className={styles.topBarDate}>
+                {new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+              </span>
+              <div className={styles.statusPill}>
+                <span className={styles.statusDot} />
+                Live Monitoring
+              </div>
             </div>
           </div>
 
@@ -180,25 +191,33 @@ export default function Dashboard() {
               icon="📷"
               label="Total Screenshots"
               value={stats.total_screenshots.toLocaleString()}
-              color="#4A9EFF"
+              sub="+captures today"
+              color="#4F63D2"
+              bg="#EEF2FF"
             />
             <StatCard
               icon="⏱"
               label="Capture Interval"
               value="3 min"
-              color="#A78BFA"
+              sub="Every 3 minutes"
+              color="#7C3AED"
+              bg="#F5F3FF"
             />
             <StatCard
               icon="🕐"
               label="Last Capture"
               value={stats.last_capture ? new Date(stats.last_capture).toLocaleTimeString() : "—"}
-              color="#34D399"
+              sub="Today"
+              color="#059669"
+              bg="#ECFDF5"
             />
             <StatCard
               icon="👤"
               label="Logged in as"
               value={user.username}
-              color="#F59E0B"
+              sub="Active Session"
+              color="#D97706"
+              bg="#FFFBEB"
             />
           </div>
 
@@ -246,33 +265,33 @@ export default function Dashboard() {
         {showWelcome && (
           <div style={{
             position: "fixed", bottom: 28, right: 28, zIndex: 300,
-            background: "linear-gradient(135deg, #1a1a2e, #16213e)",
-            border: "1px solid rgba(74,158,255,0.3)",
+            background: "#FFFFFF",
+            border: "1px solid #E2E8F0",
             borderRadius: 16, padding: "18px 22px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
             display: "flex", alignItems: "center", gap: 14,
             animation: "slideUp 0.3s ease",
             minWidth: 260,
           }}>
             <div style={{
               width: 44, height: 44, borderRadius: "50%",
-              background: "linear-gradient(135deg, #4A9EFF, #A78BFA)",
+              background: "linear-gradient(135deg, #4F63D2, #818CF8)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 20, flexShrink: 0,
+              fontSize: 20, flexShrink: 0, color: "#fff", fontWeight: 700,
             }}>
               {user?.username?.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A", marginBottom: 2 }}>
                 Welcome back, {user?.username?.split(" ")[0]} 👋
               </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>
+              <div style={{ fontSize: 12, color: "#94A3B8" }}>
                 Realisieren Pulse is tracking your activity
               </div>
             </div>
             <button onClick={() => setShowWelcome(false)} style={{
               marginLeft: "auto", background: "none", border: "none",
-              color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 16, padding: 4,
+              color: "#94A3B8", cursor: "pointer", fontSize: 16, padding: 4,
             }}>✕</button>
           </div>
         )}
@@ -368,7 +387,7 @@ function ActivitySection({ activity }) {
         {/* Activity % */}
         <div className={styles.activityCard}>
           <div className={styles.activityCardLabel}>Activity</div>
-          <div className={styles.activityCardValue} style={{ color: pct >= 70 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#F87171" }}>
+          <div className={styles.activityCardValue} style={{ color: pct >= 70 ? "#16A34A" : pct >= 40 ? "#D97706" : "#DC2626" }}>
             {pct.toFixed(0)}%
           </div>
           <div className={styles.activityPercBar}>
@@ -380,7 +399,7 @@ function ActivitySection({ activity }) {
         {/* Active time */}
         <div className={styles.activityCard}>
           <div className={styles.activityCardLabel}>Active Time</div>
-          <div className={styles.activityCardValue} style={{ color: "#4A9EFF" }}>
+          <div className={styles.activityCardValue} style={{ color: "#4F63D2" }}>
             {fmtSecs(activeSec)}
           </div>
           <div className={styles.activityCardSub}>mouse + keyboard detected</div>
@@ -389,7 +408,7 @@ function ActivitySection({ activity }) {
         {/* Idle time */}
         <div className={styles.activityCard}>
           <div className={styles.activityCardLabel}>Idle Time</div>
-          <div className={styles.activityCardValue} style={{ color: "#A78BFA" }}>
+          <div className={styles.activityCardValue} style={{ color: "#7C3AED" }}>
             {fmtSecs(idleSec)}
           </div>
           <div className={styles.activityCardSub}>no input for 3+ min</div>
@@ -415,7 +434,7 @@ function TimelineChart({ logs }) {
       <div className={styles.chartBars}>
         {logs.map((w, i) => {
           const pct  = w.activity_percent;
-          const hue  = pct >= 70 ? "#34D399" : pct >= 40 ? "#F59E0B" : "#F87171";
+          const hue  = pct >= 70 ? "#22C55E" : pct >= 40 ? "#F97316" : "#EF4444";
           const hPx  = Math.max(4, Math.round((pct / 100) * 72)); // max 72px bar height
           return (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -431,15 +450,15 @@ function TimelineChart({ logs }) {
       </div>
       <div className={styles.chartLegend}>
         <div className={styles.legendItem}>
-          <div className={styles.legendDot} style={{ background: "#34D399" }} />
+          <div className={styles.legendDot} style={{ background: "#22C55E" }} />
           Active (≥70%)
         </div>
         <div className={styles.legendItem}>
-          <div className={styles.legendDot} style={{ background: "#F59E0B" }} />
+          <div className={styles.legendDot} style={{ background: "#F97316" }} />
           Moderate (40–69%)
         </div>
         <div className={styles.legendItem}>
-          <div className={styles.legendDot} style={{ background: "#F87171" }} />
+          <div className={styles.legendDot} style={{ background: "#EF4444" }} />
           Idle (&lt;40%)
         </div>
       </div>
@@ -456,13 +475,13 @@ function TaskSummaryWidget({ summary }) {
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <h2 className={styles.sectionTitle}>Today&apos;s Tasks</h2>
-        <a href="/tasks" style={{ fontSize: 12, color: "#4A9EFF", textDecoration: "none" }}>View All →</a>
+        <a href="/tasks" style={{ fontSize: 12, color: "#4F63D2", textDecoration: "none", fontWeight: 600 }}>View All →</a>
       </div>
 
       <div className={styles.activityGrid}>
         <div className={styles.activityCard}>
           <div className={styles.activityCardLabel}>Completion</div>
-          <div className={styles.activityCardValue} style={{ color: completion_pct >= 70 ? "#34D399" : completion_pct >= 40 ? "#F59E0B" : "#F87171" }}>
+          <div className={styles.activityCardValue} style={{ color: completion_pct >= 70 ? "#16A34A" : completion_pct >= 40 ? "#D97706" : "#DC2626" }}>
             {completion_pct.toFixed(0)}%
           </div>
           <div className={styles.activityPercBar}>
@@ -473,13 +492,13 @@ function TaskSummaryWidget({ summary }) {
 
         <div className={styles.activityCard}>
           <div className={styles.activityCardLabel}>In Progress</div>
-          <div className={styles.activityCardValue} style={{ color: "#4A9EFF" }}>{in_progress}</div>
+          <div className={styles.activityCardValue} style={{ color: "#4F63D2" }}>{in_progress}</div>
           <div className={styles.activityCardSub}>tasks active now</div>
         </div>
 
         <div className={styles.activityCard}>
           <div className={styles.activityCardLabel}>Pending</div>
-          <div className={styles.activityCardValue} style={{ color: "#A78BFA" }}>{pending}</div>
+          <div className={styles.activityCardValue} style={{ color: "#7C3AED" }}>{pending}</div>
           <div className={styles.activityCardSub}>not started yet</div>
         </div>
       </div>
@@ -488,14 +507,15 @@ function TaskSummaryWidget({ summary }) {
 }
 
 // ── Small reusable stat card component ──────────────────────
-function StatCard({ icon, label, value, color }) {
+function StatCard({ icon, label, value, sub, color, bg }) {
   return (
     <div className={styles.statCard}>
-      <div className={styles.statIcon} style={{ background: `${color}20`, color }}>
+      <div className={styles.statIcon} style={{ background: bg || `${color}18`, color }}>
         {icon}
       </div>
       <div className={styles.statValue}>{value}</div>
       <div className={styles.statLabel}>{label}</div>
+      {sub && <div className={styles.statSub}>{sub}</div>}
     </div>
   );
 }
