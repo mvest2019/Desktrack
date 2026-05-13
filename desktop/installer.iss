@@ -24,8 +24,8 @@
 
 #define MyAppName      "Realisieren Pulse"
 #define MyAppVersion   "1.0.0"
-#define MyAppPublisher "Your Company Name"
-#define MyAppURL       "http://108.181.168.43"
+#define MyAppPublisher "Realisieren"
+#define MyAppURL       "http://69.62.76.202:3000"
 #define MyAppExeName   "RealisierenPulse.exe"
 #define MyAppDescription "Real-time work sync and activity tracker"
 
@@ -58,13 +58,15 @@ WizardStyle=modern
 
 ; ── Require admin rights (needed to write to Program Files) ──
 PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=commandline
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 ; ── These are checkboxes shown to the user during install ────
-Name: "desktopicon"; Description: "Create a &Desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
+Name: "desktopicon";  Description: "Create a &Desktop shortcut"; GroupDescription: "Additional icons:"
+Name: "startupicon"; Description: "Start automatically when &Windows starts"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 [Files]
 ; ── Copy the built EXE into the install folder ───────────────
@@ -81,6 +83,8 @@ Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
 ; ── Desktop shortcut (only if user checked the checkbox above) ──
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+; ── Startup shortcut (auto-launch on Windows login) ─────────
+Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startupicon
 
 [Run]
 ; ── After install, offer to launch the app immediately ───────
