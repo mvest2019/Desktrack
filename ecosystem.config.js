@@ -3,9 +3,9 @@ module.exports = {
     // ── Backend — FastAPI via uvicorn ─────────────────────────
     {
       name: 'backend',
-      script: 'python3',
+      script: '/var/www/desktracking/backend/venv/bin/python',
       args: '-m uvicorn main:app --host 0.0.0.0 --port 8000',
-      cwd: './backend',
+      cwd: '/var/www/desktracking/backend/backend',
       interpreter: 'none',
       autorestart: true,
       watch: false,
