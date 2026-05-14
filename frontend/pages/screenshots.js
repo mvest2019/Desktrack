@@ -160,11 +160,11 @@ export default function ScreenshotsPage() {
             <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
-            <Link href="/dashboard" className={styles.navItem}><span>DB</span> Dashboard</Link>
-            <Link href="/screenshots" className={`${styles.navItem} ${styles.active}`}><span>SC</span> Screenshots</Link>
-            <Link href="/activity" className={styles.navItem}><span>AC</span> Activity</Link>
-            <Link href="/tasks" className={styles.navItem}><span>TK</span> My Tasks</Link>
-            <Link href="/profile" className={styles.navItem}><span>PF</span> Profile</Link>
+            <Link href="/dashboard" className={styles.navItem}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg> Dashboard</Link>
+            <Link href="/screenshots" className={`${styles.navItem} ${styles.active}`}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Screenshots</Link>
+            <Link href="/activity" className={styles.navItem}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Activity</Link>
+            <Link href="/tasks" className={styles.navItem}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> My Tasks</Link>
+            <Link href="/profile" className={styles.navItem}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Profile</Link>
           </nav>
           <div className={styles.sidebarFooter}>
             <div className={styles.userBadge}>
@@ -241,7 +241,7 @@ export default function ScreenshotsPage() {
 
             {/* Right: calendar */}
             <aside className={styles.calSidebar}>
-              <p className={styles.calTitle}>📅 Jump to date</p>
+              <p className={styles.calTitle}>Jump to date</p>
               <MiniCalendar
                 activeDates={activeDates}
                 selectedDate={calDate}
