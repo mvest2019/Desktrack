@@ -23,6 +23,7 @@ import random
 import string
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 
 logging.basicConfig(
@@ -208,29 +209,100 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 # ══════════════════════════════════════════════════════════
 
 def _send_reset_email(to_email: str, otp: str):
-    """Send OTP via SMTP if configured, otherwise just log it."""
-    host = os.getenv("SMTP_HOST", "")
+    """Send OTP via SMTP. Falls back to console log if SMTP not configured."""
+    host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     port = int(os.getenv("SMTP_PORT", "587"))
     user = os.getenv("SMTP_USER", "")
     pw   = os.getenv("SMTP_PASS", "")
-    frm  = os.getenv("SMTP_FROM", user)
-    if not host or not user:
+    frm  = os.getenv("SMTP_FROM", f"Realisieren Pulse <{user}>")
+
+    if not user or not pw:
         log.info("📧 [NO SMTP] Password reset OTP for %s: %s", to_email, otp)
         return
+
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F0F4FF;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F0F4FF;padding:40px 0;">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0"
+             style="background:#FFFFFF;border-radius:16px;overflow:hidden;
+                    box-shadow:0 4px 24px rgba(79,99,210,0.10);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#4F63D2;padding:32px 40px;text-align:center;">
+            <span style="font-size:28px;font-weight:800;color:#FFFFFF;
+                         letter-spacing:-0.5px;">Realisieren Pulse</span>
+            <p style="color:#C7D2FE;font-size:13px;margin:6px 0 0;">
+              Workforce Productivity Platform
+            </p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 40px;">
+            <p style="font-size:15px;color:#0F172A;margin:0 0 8px;">
+              Hi there,
+            </p>
+            <p style="font-size:14px;color:#475569;margin:0 0 28px;line-height:1.6;">
+              We received a request to reset your Realisieren Pulse password.
+              Use the code below — it expires in <strong>15 minutes</strong>.
+            </p>
+
+            <!-- OTP box -->
+            <div style="background:#EEF2FF;border-radius:12px;padding:24px;
+                        text-align:center;margin-bottom:28px;">
+              <p style="font-size:12px;color:#6366F1;font-weight:600;
+                         letter-spacing:1px;margin:0 0 10px;text-transform:uppercase;">
+                Your Reset Code
+              </p>
+              <span style="font-size:40px;font-weight:800;color:#4F63D2;
+                           letter-spacing:12px;">{otp}</span>
+            </div>
+
+            <p style="font-size:13px;color:#64748B;line-height:1.6;margin:0 0 24px;">
+              If you didn't request a password reset, you can safely ignore this email.
+              Your password will not be changed.
+            </p>
+
+            <hr style="border:none;border-top:1px solid #E2E8F0;margin:0 0 24px;">
+
+            <p style="font-size:12px;color:#94A3B8;margin:0;text-align:center;">
+              Sent by Realisieren Pulse &nbsp;·&nbsp;
+              <a href="https://desktrack-five.vercel.app"
+                 style="color:#4F63D2;text-decoration:none;">desktrack-five.vercel.app</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+    plain = (
+        f"Your Realisieren Pulse password reset code is: {otp}\n\n"
+        f"This code expires in 15 minutes.\n"
+        f"If you did not request this, ignore this email."
+    )
+
     try:
-        msg = MIMEText(
-            f"Your Realisieren Pulse password reset code is:\n\n"
-            f"  {otp}\n\n"
-            f"This code expires in 15 minutes. If you did not request this, ignore this email.",
-            "plain"
-        )
-        msg["Subject"] = "Realisieren Pulse — Password Reset Code"
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Reset your Realisieren Pulse password"
         msg["From"]    = frm
         msg["To"]      = to_email
+        msg.attach(MIMEText(plain, "plain"))
+        msg.attach(MIMEText(html, "html"))
+
         with smtplib.SMTP(host, port, timeout=10) as server:
             server.starttls()
             server.login(user, pw)
-            server.sendmail(frm, [to_email], msg.as_string())
+            server.sendmail(user, [to_email], msg.as_string())
         log.info("📧 Reset OTP sent to %s", to_email)
     except Exception as exc:
         log.warning("📧 Email send failed (%s) — OTP for %s: %s", exc, to_email, otp)

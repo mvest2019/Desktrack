@@ -1451,47 +1451,71 @@ class DashboardWindow(ctk.CTkToplevel):
             s_bg, s_fg, s_lbl = STA_COLOR.get(status, ("#F1F5F9", "#64748B", status.capitalize()))
             is_done  = status == "completed"
 
+            # Format created_at as "Today 10:45 AM" or "May 12, 3:30 PM"
+            try:
+                ca_raw = t.get("created_at", "")
+                ca = datetime.fromisoformat(ca_raw.replace("Z", ""))
+                now = datetime.now()
+                if ca.date() == now.date():
+                    time_str = "Today " + ca.strftime("%I:%M %p").lstrip("0")
+                else:
+                    time_str = ca.strftime("%b %d, %I:%M %p").lstrip("0")
+            except Exception:
+                time_str = ""
+
+            # Card — no fixed height, auto-sizes to content
             row = ctk.CTkFrame(self._tasks_container, fg_color="#FFFFFF",
                                corner_radius=10, border_color="#E2E8F0", border_width=1)
             row.pack(fill="x", pady=(0, 6))
 
+            # Priority stripe — no pack_propagate so it doesn't force a default height
             stripe = ctk.CTkFrame(row, fg_color=pc, corner_radius=0, width=4)
             stripe.pack(side="left", fill="y")
-            stripe.pack_propagate(False)
 
+            # Content body — fill="x" so height is driven by content, not parent
             body = ctk.CTkFrame(row, fg_color="transparent")
-            body.pack(side="left", fill="both", expand=True, padx=(10, 8), pady=8)
+            body.pack(side="left", fill="x", expand=True, padx=(10, 8), pady=(8, 8))
 
+            # Title + priority badge
             title_row = ctk.CTkFrame(body, fg_color="transparent")
             title_row.pack(fill="x")
             ctk.CTkLabel(title_row, text=title, anchor="w",
                          font=ctk.CTkFont(family=_UI_FONT, size=12, weight="bold"),
                          text_color="#94A3B8" if is_done else "#0F172A",
-                         wraplength=320).pack(side="left")
+                         wraplength=260).pack(side="left")
             ctk.CTkLabel(title_row, text=f" {pri.capitalize()} ",
                          font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
                          fg_color=pc + "25", text_color=pc,
                          corner_radius=6).pack(side="right", padx=(4, 0))
 
-            sts_row = ctk.CTkFrame(body, fg_color="transparent")
-            sts_row.pack(fill="x", pady=(4, 0))
-            ctk.CTkLabel(sts_row, text=f"  {s_lbl}  ",
+            # Status badge + created time
+            meta_row = ctk.CTkFrame(body, fg_color="transparent")
+            meta_row.pack(fill="x", pady=(4, 0))
+            ctk.CTkLabel(meta_row, text=f"  {s_lbl}  ",
                          font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
                          fg_color=s_bg, text_color=s_fg,
                          corner_radius=6).pack(side="left")
+            if time_str:
+                ctk.CTkLabel(meta_row, text=time_str,
+                             font=ctk.CTkFont(family=_UI_FONT, size=9),
+                             text_color="#94A3B8").pack(side="left", padx=(6, 0))
 
+            # Action buttons on their own row
             if not is_done:
+                act_row = ctk.CTkFrame(body, fg_color="transparent")
+                act_row.pack(fill="x", pady=(6, 0))
+
                 def _mk(lbl, ns, i=tid):
                     return ctk.CTkButton(
-                        sts_row, text=lbl, height=22, width=80,
+                        act_row, text=lbl, height=22, width=84,
                         font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
                         fg_color="#F1F5F9", hover_color="#E2E8F0",
                         text_color="#475569", corner_radius=6,
                         command=lambda s=ns, x=i: self._on_task_status_change(x, s),
                     )
-                if status != "in_progress":
-                    _mk("In Progress", "in_progress").pack(side="right", padx=(4, 0))
-                _mk("Done ✓", "completed").pack(side="right", padx=(4, 0))
+                if status == "pending":
+                    _mk("▶ In Progress", "in_progress").pack(side="left", padx=(0, 4))
+                _mk("✓ Done", "completed").pack(side="left")
 
     def _on_task_status_change(self, task_id: int, new_status: str):
         threading.Thread(
