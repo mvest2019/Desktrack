@@ -9,7 +9,7 @@
 # need this script. See DEPLOYMENT.md → Part 4.
 #
 # HOW TO USE:
-#   ssh root@108.181.168.43
+#   ssh root@69.62.76.202
 #   cd /opt/realisieren-pulse
 #   ./deploy/deploy_frontend.sh
 #
@@ -37,12 +37,11 @@ git pull origin main
 echo "      Done."
 
 # ── Step 2: Set staging API URL ──────────────────────────────
-# Next.js reads NEXT_PUBLIC_* at BUILD TIME, not runtime.
-# So we must set the env var BEFORE running npm run build.
+# Next.js rewrites (next.config.js) read BACKEND_URL at startup.
 echo "[2/4] Setting staging environment..."
 cd "$FRONTEND_DIR"
-export NEXT_PUBLIC_API_URL="http://108.181.168.43:8000"
-echo "      NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL"
+export BACKEND_URL="http://69.62.76.202:8000"
+echo "      BACKEND_URL=$BACKEND_URL"
 
 # ── Step 3: Install npm packages and build ───────────────────
 echo "[3/4] Installing packages and building..."
@@ -67,7 +66,7 @@ echo "      Frontend running on port 3000."
 echo ""
 echo "============================================"
 echo "  FRONTEND DEPLOYMENT COMPLETE"
-echo "  Running at: http://108.181.168.43:3000"
+echo "  Running at: http://69.62.76.202:3000"
 echo "============================================"
 echo ""
 echo "IMPORTANT: Add a /etc/nginx/sites-available/realisieren-pulse-frontend"

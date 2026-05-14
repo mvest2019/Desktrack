@@ -74,7 +74,7 @@ Write-Host "      Cleaned." -ForegroundColor Green
 Write-Host "[5/5] Building EXE with PyInstaller..." -ForegroundColor Green
 Write-Host ""
 
-pyinstaller realisieren-pulse.spec
+python -m PyInstaller realisieren-pulse.spec
 
 Write-Host ""
 if (-not (Test-Path "dist\RealisierenPulse.exe")) {
