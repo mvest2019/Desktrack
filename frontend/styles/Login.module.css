@@ -157,6 +157,8 @@
 
 .heroStatDivider {
   width: 1px;
+  align-self: stretch;
+  min-height: 32px;
   background: var(--rp-border);
 }
 

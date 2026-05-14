@@ -99,10 +99,17 @@ export default function TasksPage() {
         fetch(`${API}/api/tasks/${userId}?date=${date}`),
         fetch(`${API}/api/tasks/${userId}/summary?date=${date}`),
       ]);
-      if (tasksRes.ok) setTasks((await tasksRes.json()).tasks || []);
-      else setFetchError("Failed to load tasks.");
+      if (tasksRes.ok) {
+        setTasks((await tasksRes.json()).tasks || []);
+      } else if (tasksRes.status === 404) {
+        localStorage.removeItem("user");
+        router.replace("/?reason=account_not_found");
+        return;
+      } else {
+        setFetchError(`Server error ${tasksRes.status}. Your session may be stale — try signing out and back in.`);
+      }
       if (sumRes.ok) setSummary(await sumRes.json());
-    } catch { setFetchError("Cannot connect to server."); }
+    } catch { setFetchError("Cannot connect to server. Make sure the backend is reachable."); }
     finally { setLoading(false); }
   }
 

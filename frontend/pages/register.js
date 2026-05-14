@@ -83,6 +83,24 @@ export default function RegisterPage() {
             <p className={styles.heroDesc}>
               Empower your team with smarter workflows, seamless collaboration, and AI-powered task analysis that helps turn daily work into actionable insights.
             </p>
+
+            <div className={styles.heroStats}>
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatVal}>Real‑time</span>
+                <span className={styles.heroStatLabel}>Screenshot sync</span>
+              </div>
+              <div className={styles.heroStatDivider} />
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatVal}>AI‑powered</span>
+                <span className={styles.heroStatLabel}>Activity insights</span>
+              </div>
+              <div className={styles.heroStatDivider} />
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatVal}>Secure</span>
+                <span className={styles.heroStatLabel}>End‑to‑end data</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -96,7 +114,9 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Full Name</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>N</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </span>
                   <input type="text" className={styles.input} placeholder="Your name"
                     value={username} onChange={(e) => setUsername(e.target.value)}
                     autoComplete="name" disabled={loading} />
@@ -106,7 +126,9 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Email Address</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>@</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+                  </span>
                   <input type="email" className={styles.input} placeholder="you@example.com"
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email" disabled={loading} />
@@ -116,7 +138,9 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>#</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </span>
                   <input type={showPass ? "text" : "password"} className={styles.input}
                     placeholder="Min. 6 characters" value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -131,7 +155,9 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Account Type</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>R</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  </span>
                   <select className={styles.input} value={userType}
                     onChange={(e) => setUserType(e.target.value)} disabled={loading}>
                     <option value="user">Employee (User)</option>
@@ -143,7 +169,9 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Project</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>P</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  </span>
                   <select className={styles.input} value={project}
                     onChange={(e) => setProject(e.target.value)} disabled={loading}>
                     <option value="">Select project...</option>
@@ -156,7 +184,9 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Designation</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>D</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  </span>
                   <input type="text" className={styles.input}
                     placeholder="e.g. Frontend Dev, Marketing"
                     value={designation} onChange={(e) => setDesignation(e.target.value)}

@@ -109,6 +109,25 @@ def _clear_session():
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("blue")
 
+# ── Font initialisation ─────────────────────────────────────
+# Defaults to Segoe UI; upgraded to Lexend Deca in _init_ui_font()
+# once a Tk root window exists and font families can be queried.
+_UI_FONT: str = "Segoe UI"
+
+
+def _init_ui_font(root) -> None:
+    """Detect best available UI font once the Tk root window exists."""
+    global _UI_FONT
+    import tkinter.font as tkfont
+    try:
+        available = tkfont.families(root)
+        for candidate in ("Lexend Deca", "Segoe UI Variable", "Segoe UI", "Calibri"):
+            if candidate in available:
+                _UI_FONT = candidate
+                return
+    except Exception:
+        pass
+
 
 # ══════════════════════════════════════════════════════════
 #  LOGIN WINDOW
@@ -121,6 +140,7 @@ class LoginWindow(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+        _init_ui_font(self)
 
         self.title("Realisieren Pulse")
         self.geometry("440x620")
@@ -517,25 +537,25 @@ class StartWindow(ctk.CTkToplevel):
             _img = ctk.CTkImage(Image.open(_ICON_PNG), size=(82, 82))
             ctk.CTkLabel(icon_box, image=_img, text="").place(relx=0.5, rely=0.5, anchor="center")
         except Exception:
-            ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(family="Lexend Deca", size=44, weight="bold"),
+            ctk.CTkLabel(icon_box, text="R", font=ctk.CTkFont(family=_UI_FONT, size=44, weight="bold"),
                          text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
 
         # Greeting
         name = self.user_data.get("username", "there")
         ctk.CTkLabel(inner, text="Welcome back,",
-                     font=ctk.CTkFont(family="Lexend Deca", size=14),
+                     font=ctk.CTkFont(family=_UI_FONT, size=14),
                      text_color="#64748B").pack(pady=(20, 0))
         ctk.CTkLabel(inner, text=name,
-                     font=ctk.CTkFont(family="Lexend Deca", size=30, weight="bold"),
+                     font=ctk.CTkFont(family=_UI_FONT, size=30, weight="bold"),
                      text_color="#0F172A").pack(pady=(2, 0))
         ctk.CTkLabel(inner, text="Let's continue your productive journey.",
-                     font=ctk.CTkFont(family="Lexend Deca", size=12),
+                     font=ctk.CTkFont(family=_UI_FONT, size=12),
                      text_color="#94A3B8").pack(pady=(4, 20))
 
         # Start Monitoring button
         ctk.CTkButton(
             inner, text="▶   Start Monitoring", height=54,
-            font=ctk.CTkFont(family="Lexend Deca", size=15, weight="bold"),
+            font=ctk.CTkFont(family=_UI_FONT, size=15, weight="bold"),
             fg_color="#4F63D2", hover_color="#4050C0",
             corner_radius=14, command=self._start,
         ).pack(fill="x", pady=(0, 14))
@@ -555,20 +575,20 @@ class StartWindow(ctk.CTkToplevel):
         txt_col = ctk.CTkFrame(sec_row, fg_color="transparent")
         txt_col.pack(side="left", fill="both", expand=True)
         ctk.CTkLabel(txt_col, text="Your activity is secure", anchor="w",
-                     font=ctk.CTkFont(family="Lexend Deca", size=12, weight="bold"),
+                     font=ctk.CTkFont(family=_UI_FONT, size=12, weight="bold"),
                      text_color="#0F172A").pack(anchor="w")
         ctk.CTkLabel(txt_col, text="Realisieren Pulse runs in the background\nand keeps your data safe.",
-                     anchor="w", font=ctk.CTkFont(family="Lexend Deca", size=11),
+                     anchor="w", font=ctk.CTkFont(family=_UI_FONT, size=11),
                      text_color="#94A3B8", justify="left").pack(anchor="w", pady=(2, 0))
 
         # Sign out footer
         foot = ctk.CTkFrame(inner, fg_color="transparent")
         foot.pack(pady=(4, 0))
         ctk.CTkLabel(foot, text="Not you?  ",
-                     font=ctk.CTkFont(family="Lexend Deca", size=13),
+                     font=ctk.CTkFont(family=_UI_FONT, size=13),
                      text_color="#64748B").pack(side="left")
         ctk.CTkButton(foot, text="Sign out",
-                      font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
+                      font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
                       text_color="#4F63D2", fg_color="transparent",
                       hover_color="#EEF2FF", border_width=0, height=24, width=70,
                       command=self._sign_out).pack(side="left")
@@ -650,10 +670,10 @@ class TaskEntryDialog(ctk.CTkToplevel):
                          text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
 
         ctk.CTkLabel(outer, text="What is your today's task?",
-                     font=ctk.CTkFont(family="Lexend Deca", size=18, weight="bold"),
+                     font=ctk.CTkFont(family=_UI_FONT, size=18, weight="bold"),
                      text_color="#0F172A").pack(pady=(16, 4))
         ctk.CTkLabel(outer, text="Enter your main focus for today to start monitoring.",
-                     font=ctk.CTkFont(family="Lexend Deca", size=11),
+                     font=ctk.CTkFont(family=_UI_FONT, size=11),
                      text_color="#94A3B8").pack()
 
         # Input field
@@ -665,7 +685,7 @@ class TaskEntryDialog(ctk.CTkToplevel):
         self._entry = ctk.CTkEntry(
             field_frame, textvariable=self._task_var,
             placeholder_text="e.g. Build login screen, Fix API bug…",
-            font=ctk.CTkFont(family="Lexend Deca", size=13),
+            font=ctk.CTkFont(family=_UI_FONT, size=13),
             fg_color="transparent", border_width=0,
             text_color="#0F172A", placeholder_text_color="#94A3B8",
         )
@@ -679,7 +699,7 @@ class TaskEntryDialog(ctk.CTkToplevel):
 
         self._btn = ctk.CTkButton(
             outer, text="▶  Start Monitoring", height=50,
-            font=ctk.CTkFont(family="Lexend Deca", size=14, weight="bold"),
+            font=ctk.CTkFont(family=_UI_FONT, size=14, weight="bold"),
             fg_color="#4F63D2", hover_color="#4050C0",
             corner_radius=14, command=self._on_submit,
         )
@@ -731,16 +751,46 @@ class TaskEntryDialog(ctk.CTkToplevel):
             )
             if res.status_code == 200:
                 data = res.json()
-                self._task_id = data["task_id"]
+                self._task_id    = data["task_id"]
                 self._task_title = data["title"]
                 self._task_status = data["status"]
                 self.after(0, self._skip_to_dashboard)
+            elif res.status_code == 404:
+                # User doesn't exist on this server
+                _clear_session()
+                self.after(0, lambda: self._show_error(
+                    f"⚠  Account not found on server ({API_URL}).\n"
+                    "Please register or sign in."
+                ))
+                self.after(2500, self._back_to_login)
             else:
-                self.after(0, lambda: self._show_error("Could not save task. Proceeding anyway."))
-                self.after(500, lambda: self._open_dashboard_no_task(title))
-        except Exception:
-            self.after(0, lambda: self._show_error("No server connection. Proceeding offline."))
+                detail = ""
+                try: detail = res.json().get("detail", "")
+                except Exception: pass
+                msg = f"Server error {res.status_code}"
+                if detail: msg += f": {detail}"
+                self.after(0, lambda m=msg: self._show_error(f"⚠  {m}. Proceeding offline."))
+                self.after(800, lambda: self._open_dashboard_no_task(title))
+        except requests.exceptions.ConnectionError:
+            self.after(0, lambda: self._show_error("⚠  Cannot reach server. Proceeding offline."))
             self.after(800, lambda: self._open_dashboard_no_task(title))
+        except Exception:
+            self.after(0, lambda: self._show_error("⚠  Unexpected error. Proceeding offline."))
+            self.after(800, lambda: self._open_dashboard_no_task(title))
+
+    def _back_to_login(self):
+        self.destroy()
+        if self._start_win:
+            try: self._start_win.destroy()
+            except Exception: pass
+        try:
+            self._login_win.error_var.set("⚠  Account not found. Please register.")
+            self._login_win.email_var.set("")
+            self._login_win.password_var.set("")
+            self._login_win.login_btn.configure(text="Sign In  →", state="normal")
+            self._login_win.deiconify()
+        except Exception:
+            pass
 
     def _open_dashboard_no_task(self, title: str):
         self.withdraw()
@@ -837,31 +887,30 @@ class DashboardWindow(ctk.CTkToplevel):
         self.geometry(f"{w}x{h}+{(sw-w)//2}+{(sh-h)//2}")
 
     def _build_ui(self):
-        """Build the dashboard layout"""
+        self.configure(fg_color="#F5F7FA")
 
-        # ── Top header bar ───────────────────────────────
-        header = ctk.CTkFrame(self, height=62, corner_radius=0, fg_color="#FFFFFF",
-                              border_color="#E2E8F0", border_width=1)
+        # ── Header ───────────────────────────────────────
+        header = ctk.CTkFrame(self, height=56, corner_radius=0,
+                              fg_color="#FFFFFF", border_color="#E2E8F0", border_width=1)
         header.pack(fill="x")
         header.pack_propagate(False)
-
         try:
-            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(32, 32))
+            _hdr_img = ctk.CTkImage(Image.open(_ICON_PNG), size=(28, 28))
             ctk.CTkLabel(header, image=_hdr_img, text="  Realisieren Pulse",
                          compound="left", text_color="#0F172A",
-                         font=ctk.CTkFont(family="Lexend Deca", size=16, weight="bold")).pack(side="left", padx=18, pady=15)
+                         font=ctk.CTkFont(family=_UI_FONT, size=15, weight="bold")).pack(side="left", padx=16, pady=14)
         except Exception:
-            ctk.CTkLabel(header, text="R  Realisieren Pulse",
-                         font=ctk.CTkFont(family="Lexend Deca", size=16, weight="bold"),
-                         text_color="#0F172A").pack(side="left", padx=18, pady=15)
+            ctk.CTkLabel(header, text="Realisieren Pulse",
+                         font=ctk.CTkFont(family=_UI_FONT, size=15, weight="bold"),
+                         text_color="#0F172A").pack(side="left", padx=16, pady=14)
 
-        live_frame = ctk.CTkFrame(header, fg_color="#F0FDF4", corner_radius=20)
-        live_frame.pack(side="right", padx=16, pady=16)
-        ctk.CTkLabel(live_frame, text="●", text_color="#22C55E",
-                     font=ctk.CTkFont(size=10)).pack(side="left", padx=(10, 2))
-        ctk.CTkLabel(live_frame, text="MONITORING",
-                     font=ctk.CTkFont(family="Lexend Deca", size=9, weight="bold"),
-                     text_color="#16A34A").pack(side="left", padx=(0, 10))
+        live_pill = ctk.CTkFrame(header, fg_color="#F0FDF4", corner_radius=20)
+        live_pill.pack(side="right", padx=14, pady=14)
+        ctk.CTkLabel(live_pill, text="●", text_color="#22C55E",
+                     font=ctk.CTkFont(size=9)).pack(side="left", padx=(8, 2))
+        ctk.CTkLabel(live_pill, text="MONITORING",
+                     font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
+                     text_color="#16A34A").pack(side="left", padx=(0, 8))
 
         # ── Scrollable content ────────────────────────────
         scroll = ctk.CTkScrollableFrame(self, fg_color="#F5F7FA",
@@ -869,156 +918,209 @@ class DashboardWindow(ctk.CTkToplevel):
                                         scrollbar_button_hover_color="#94A3B8")
         scroll.pack(fill="both", expand=True)
         inner = ctk.CTkFrame(scroll, fg_color="transparent")
-        inner.pack(fill="both", expand=True, padx=18, pady=14)
+        inner.pack(fill="both", expand=True, padx=16, pady=12)
 
-        # ─ Section helper ─────────────────────────────────
-        def section_label(parent, icon, text):
-            row = ctk.CTkFrame(parent, fg_color="transparent")
-            row.pack(fill="x", pady=(0, 6))
-            ic = ctk.CTkFrame(row, fg_color="#EEF2FF", corner_radius=8, width=30, height=30)
-            ic.pack(side="left", padx=(0, 8))
-            ic.pack_propagate(False)
-            ctk.CTkLabel(ic, text=icon, font=ctk.CTkFont(size=14)).place(relx=0.5, rely=0.5, anchor="center")
-            ctk.CTkLabel(row, text=text, font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
-                         text_color="#0F172A").pack(side="left")
+        # ── KPI strip ─────────────────────────────────────
+        self._kpi_tasks_var  = tk.StringVar(value="—")
+        self._kpi_done_var   = tk.StringVar(value="—")
+        self._kpi_active_var = tk.StringVar(value="—")
 
-        # ══ TODAY'S TASK CARD ════════════════════════════
+        kpi_row = ctk.CTkFrame(inner, fg_color="transparent")
+        kpi_row.pack(fill="x", pady=(0, 10))
+
+        def kpi_card(parent, label, var, icon, color, last=False):
+            c = ctk.CTkFrame(parent, fg_color="#FFFFFF", corner_radius=12,
+                             border_color="#E2E8F0", border_width=1)
+            c.pack(side="left", expand=True, fill="x",
+                   padx=(0, 0 if last else 8))
+            body = ctk.CTkFrame(c, fg_color="transparent")
+            body.pack(expand=True, fill="both", padx=12, pady=10)
+            ic_bg = ctk.CTkFrame(body, fg_color=color, corner_radius=8, width=30, height=30)
+            ic_bg.pack(side="left", padx=(0, 10))
+            ic_bg.pack_propagate(False)
+            ctk.CTkLabel(ic_bg, text=icon,
+                         font=ctk.CTkFont(size=13)).place(relx=0.5, rely=0.5, anchor="center")
+            txt = ctk.CTkFrame(body, fg_color="transparent")
+            txt.pack(side="left", fill="both", expand=True)
+            ctk.CTkLabel(txt, textvariable=var,
+                         font=ctk.CTkFont(family=_UI_FONT, size=18, weight="bold"),
+                         text_color="#0F172A", anchor="w").pack(anchor="w")
+            ctk.CTkLabel(txt, text=label,
+                         font=ctk.CTkFont(family=_UI_FONT, size=10),
+                         text_color="#94A3B8", anchor="w").pack(anchor="w")
+
+        kpi_card(kpi_row, "Today's Tasks",  self._kpi_tasks_var,  "✅", "#EEF2FF")
+        kpi_card(kpi_row, "Completed",       self._kpi_done_var,   "🏁", "#F0FDF4")
+        kpi_card(kpi_row, "Active Today",    self._kpi_active_var, "⚡", "#FFFBEB", last=True)
+
+        # ══ TASKS CARD ════════════════════════════════════
         task_card = self._card(inner)
+
+        # Card header row
         task_hdr = ctk.CTkFrame(task_card, fg_color="transparent")
-        task_hdr.pack(fill="x", padx=16, pady=(14, 10))
-        section_label(task_hdr, "✅", "Today's Task")
+        task_hdr.pack(fill="x", padx=14, pady=(12, 0))
 
-        # Task title display
-        title_text = self._task_title if self._task_title else "No task set"
-        self._task_title_lbl = ctk.CTkLabel(
-            task_card,
-            text=title_text,
-            font=ctk.CTkFont(family="Lexend Deca", size=14, weight="bold"),
-            text_color="#0F172A", anchor="w", wraplength=460,
+        hdr_left = ctk.CTkFrame(task_hdr, fg_color="transparent")
+        hdr_left.pack(side="left")
+        ic_t = ctk.CTkFrame(hdr_left, fg_color="#EEF2FF", corner_radius=8, width=28, height=28)
+        ic_t.pack(side="left", padx=(0, 8))
+        ic_t.pack_propagate(False)
+        ctk.CTkLabel(ic_t, text="✅", font=ctk.CTkFont(size=12)).place(relx=0.5, rely=0.5, anchor="center")
+        ctk.CTkLabel(hdr_left, text="Today's Tasks",
+                     font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
+                     text_color="#0F172A").pack(side="left")
+        self._task_count_badge = ctk.CTkLabel(
+            hdr_left, text="  0  ",
+            font=ctk.CTkFont(family=_UI_FONT, size=10, weight="bold"),
+            fg_color="#EEF2FF", text_color="#4F63D2", corner_radius=8,
         )
-        self._task_title_lbl.pack(fill="x", padx=16, pady=(0, 10))
+        self._task_count_badge.pack(side="left", padx=(6, 0))
 
-        # Status badge
-        STATUS_COLORS = {
-            "pending":     ("#FEF3C7", "#D97706", "Pending"),
-            "in_progress": ("#EEF2FF", "#4F63D2", "In Progress"),
-            "completed":   ("#F0FDF4", "#16A34A", "Completed"),
-        }
-        self._status_badge_frame = ctk.CTkFrame(task_card, fg_color="transparent")
-        self._status_badge_frame.pack(fill="x", padx=16, pady=(0, 10))
-        self._status_badge = ctk.CTkLabel(self._status_badge_frame, text="",
-                                          font=ctk.CTkFont(family="Lexend Deca", size=11, weight="bold"),
-                                          corner_radius=8, padx=10, pady=4)
-        self._status_badge.pack(side="left")
-        self._refresh_status_badge(STATUS_COLORS)
+        self._add_btn = ctk.CTkButton(
+            task_hdr, text="+ Add", height=26, width=64,
+            font=ctk.CTkFont(family=_UI_FONT, size=11, weight="bold"),
+            fg_color="#EEF2FF", hover_color="#DBEAFE", text_color="#4F63D2",
+            corner_radius=8, command=self._toggle_add_form,
+        )
+        self._add_btn.pack(side="right")
 
-        # Status update buttons
-        btn_row = ctk.CTkFrame(task_card, fg_color="transparent")
-        btn_row.pack(fill="x", padx=16, pady=(0, 14))
+        # Task list container (packed first so add form can use before=)
+        self._tasks_container = ctk.CTkFrame(task_card, fg_color="transparent")
+        self._tasks_container.pack(fill="x", padx=12, pady=(8, 12))
 
-        def make_status_btn(label, status, color, hover):
-            return ctk.CTkButton(
-                btn_row, text=label, height=34,
-                font=ctk.CTkFont(family="Lexend Deca", size=11, weight="bold"),
-                fg_color=color, hover_color=hover, text_color="#FFFFFF",
-                corner_radius=8, width=110,
-                command=lambda s=status: self._update_task_status(s, STATUS_COLORS),
-            )
+        self._tasks_loading_lbl = ctk.CTkLabel(
+            self._tasks_container, text="Loading tasks…",
+            font=ctk.CTkFont(family=_UI_FONT, size=12), text_color="#94A3B8",
+        )
+        self._tasks_loading_lbl.pack(pady=14)
 
-        make_status_btn("Pending", "pending", "#F59E0B", "#D97706").pack(side="left", padx=(0, 6))
-        make_status_btn("In Progress", "in_progress", "#4F63D2", "#4050C0").pack(side="left", padx=(0, 6))
-        make_status_btn("Completed", "completed", "#22C55E", "#16A34A").pack(side="left")
+        # Inline add form (hidden — shown before _tasks_container via before=)
+        self._add_form_visible = False
+        self._add_form_frame = ctk.CTkFrame(task_card, fg_color="#F8FAFC",
+                                            corner_radius=10, border_color="#E2E8F0", border_width=1)
+        self._add_var = tk.StringVar()
+        add_inner = ctk.CTkFrame(self._add_form_frame, fg_color="transparent")
+        add_inner.pack(fill="x", padx=10, pady=8)
+        self._add_entry = ctk.CTkEntry(
+            add_inner, textvariable=self._add_var,
+            placeholder_text="Task title… (press Enter to add)",
+            font=ctk.CTkFont(family=_UI_FONT, size=12),
+            fg_color="#FFFFFF", border_color="#CBD5E1", border_width=1,
+            text_color="#0F172A", placeholder_text_color="#94A3B8", height=34,
+        )
+        self._add_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
+        self._add_entry.bind("<Return>", lambda _: self._do_add_task())
+        self._add_submit_btn = ctk.CTkButton(
+            add_inner, text="Add", height=34, width=54,
+            font=ctk.CTkFont(family=_UI_FONT, size=11, weight="bold"),
+            fg_color="#4F63D2", hover_color="#4050C0", corner_radius=8,
+            command=self._do_add_task,
+        )
+        self._add_submit_btn.pack(side="left")
 
-        self._task_msg_var = tk.StringVar(value="")
-        ctk.CTkLabel(task_card, textvariable=self._task_msg_var,
-                     font=ctk.CTkFont(family="Lexend Deca", size=11),
-                     text_color="#64748B").pack(padx=16, pady=(0, 8))
+        # Load all tasks in background
+        threading.Thread(target=self._load_all_tasks, daemon=True).start()
 
         # ══ TRACKING STATUS CARD ═════════════════════════
-        status_card = self._card(inner)
-        status_hdr = ctk.CTkFrame(status_card, fg_color="transparent")
-        status_hdr.pack(fill="x", padx=16, pady=(14, 8))
-        section_label(status_hdr, "📊", "Tracking Status")
+        track_card = self._card(inner)
+        track_hdr = ctk.CTkFrame(track_card, fg_color="transparent")
+        track_hdr.pack(fill="x", padx=14, pady=(12, 8))
+        ic_tr = ctk.CTkFrame(track_hdr, fg_color="#EEF2FF", corner_radius=8, width=28, height=28)
+        ic_tr.pack(side="left", padx=(0, 8))
+        ic_tr.pack_propagate(False)
+        ctk.CTkLabel(ic_tr, text="📊", font=ctk.CTkFont(size=12)).place(relx=0.5, rely=0.5, anchor="center")
+        ctk.CTkLabel(track_hdr, text="Tracking Status",
+                     font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
+                     text_color="#0F172A").pack(side="left")
 
-        status_row = ctk.CTkFrame(status_card, fg_color="transparent")
-        status_row.pack(fill="x", padx=16, pady=(0, 14))
-        self.status_dot = ctk.CTkLabel(status_row, text="●", text_color="#22C55E",
-                                       font=ctk.CTkFont(size=18))
-        self.status_dot.pack(side="left")
+        live_row = ctk.CTkFrame(track_card, fg_color="#F0FDF4", corner_radius=10)
+        live_row.pack(fill="x", padx=14, pady=(0, 8))
+        self.status_dot = ctk.CTkLabel(live_row, text="●", text_color="#22C55E",
+                                       font=ctk.CTkFont(size=11))
+        self.status_dot.pack(side="left", padx=(10, 4), pady=10)
         self.status_text = ctk.CTkLabel(
-            status_row, text="  Tracking started",
-            font=ctk.CTkFont(family="Lexend Deca", size=12), text_color="#64748B",
+            live_row, text="Tracking started",
+            font=ctk.CTkFont(family=_UI_FONT, size=12, weight="bold"),
+            text_color="#16A34A",
         )
         self.status_text.pack(side="left")
+
+        self._screenshots_var = tk.StringVar(value="0 screenshots uploaded")
+        ctk.CTkLabel(track_card, textvariable=self._screenshots_var,
+                     font=ctk.CTkFont(family=_UI_FONT, size=11),
+                     text_color="#64748B").pack(padx=14, pady=(0, 12), anchor="w")
 
         # ══ PROFILE CARD ═════════════════════════════════
         prof_card = self._card(inner)
         prof_hdr = ctk.CTkFrame(prof_card, fg_color="transparent")
-        prof_hdr.pack(fill="x", padx=16, pady=(14, 10))
-        section_label(prof_hdr, "👤", "My Profile")
+        prof_hdr.pack(fill="x", padx=14, pady=(12, 10))
+        ic_p = ctk.CTkFrame(prof_hdr, fg_color="#EEF2FF", corner_radius=8, width=28, height=28)
+        ic_p.pack(side="left", padx=(0, 8))
+        ic_p.pack_propagate(False)
+        ctk.CTkLabel(ic_p, text="👤", font=ctk.CTkFont(size=12)).place(relx=0.5, rely=0.5, anchor="center")
+        ctk.CTkLabel(prof_hdr, text="My Profile",
+                     font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
+                     text_color="#0F172A").pack(side="left")
 
-        prof_body = ctk.CTkFrame(prof_card, fg_color="transparent")
-        prof_body.pack(fill="x", padx=16, pady=(0, 14))
-
-        # Avatar + name row
-        av_row = ctk.CTkFrame(prof_body, fg_color="transparent")
-        av_row.pack(fill="x", pady=(0, 10))
+        # Avatar + identity
+        av_row = ctk.CTkFrame(prof_card, fg_color="transparent")
+        av_row.pack(fill="x", padx=14, pady=(0, 10))
         initials = "".join(w[0].upper() for w in self.username.split()[:2]) or "U"
-        avatar = ctk.CTkFrame(av_row, fg_color="#EEF2FF", corner_radius=20,
-                              width=40, height=40)
-        avatar.pack(side="left", padx=(0, 10))
+        avatar = ctk.CTkFrame(av_row, fg_color="#EEF2FF", corner_radius=22, width=44, height=44)
+        avatar.pack(side="left", padx=(0, 12))
         avatar.pack_propagate(False)
         ctk.CTkLabel(avatar, text=initials,
-                     font=ctk.CTkFont(family="Lexend Deca", size=14, weight="bold"),
+                     font=ctk.CTkFont(family=_UI_FONT, size=15, weight="bold"),
                      text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
         name_col = ctk.CTkFrame(av_row, fg_color="transparent")
         name_col.pack(side="left", fill="both", expand=True)
         ctk.CTkLabel(name_col, text=self.username, anchor="w",
-                     font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
+                     font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
                      text_color="#0F172A").pack(anchor="w")
-        ctk.CTkLabel(name_col, text=self.user_data.get("email", ""),
-                     anchor="w", font=ctk.CTkFont(family="Lexend Deca", size=11),
+        ctk.CTkLabel(name_col, text=self.user_data.get("email", ""), anchor="w",
+                     font=ctk.CTkFont(family=_UI_FONT, size=11),
                      text_color="#64748B").pack(anchor="w")
 
-        # Info grid
-        def info_row(parent, label, value_var):
-            row = ctk.CTkFrame(parent, fg_color="#F8FAFC", corner_radius=8,
-                               border_color="#E2E8F0", border_width=1)
-            row.pack(fill="x", pady=(0, 4))
-            ctk.CTkLabel(row, text=label, width=130, anchor="w",
-                         font=ctk.CTkFont(family="Lexend Deca", size=11),
-                         text_color="#64748B").pack(side="left", padx=(12, 0), pady=8)
-            ctk.CTkLabel(row, textvariable=value_var, anchor="w",
-                         font=ctk.CTkFont(family="Lexend Deca", size=11, weight="bold"),
-                         text_color="#0F172A").pack(side="left", padx=(4, 12), pady=8)
-
+        # Stats grid (2-column)
         role_label = self.user_data.get("user_type", "user").replace("user", "Employee").replace("admin", "Admin")
-        self._role_var   = tk.StringVar(value=role_label)
-        self._proj_var   = tk.StringVar(value=self.user_data.get("project") or "—")
-        self._desig_var  = tk.StringVar(value=self.user_data.get("designation") or "—")
-        self._hours_var  = tk.StringVar(value="Loading…")
-        self._today_var  = tk.StringVar(value="Loading…")
+        self._role_var  = tk.StringVar(value=role_label)
+        self._proj_var  = tk.StringVar(value=self.user_data.get("project") or "—")
+        self._desig_var = tk.StringVar(value=self.user_data.get("designation") or "—")
+        self._hours_var = tk.StringVar(value="Loading…")
+        self._today_var = tk.StringVar(value="Loading…")
 
-        info_row(prof_body, "Role", self._role_var)
-        info_row(prof_body, "Project", self._proj_var)
-        info_row(prof_body, "Designation", self._desig_var)
-        info_row(prof_body, "Total Tracked", self._hours_var)
-        info_row(prof_body, "Today Active", self._today_var)
+        grid = ctk.CTkFrame(prof_card, fg_color="transparent")
+        grid.pack(fill="x", padx=14, pady=(0, 14))
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
 
-        # Load live stats in background
+        def stat_cell(parent, label, var, r, c):
+            cell = ctk.CTkFrame(parent, fg_color="#F8FAFC", corner_radius=10,
+                                border_color="#E2E8F0", border_width=1)
+            px = (0, 6) if c == 0 else (0, 0)
+            cell.grid(row=r, column=c, sticky="ew", padx=px, pady=(0, 6))
+            ctk.CTkLabel(cell, text=label,
+                         font=ctk.CTkFont(family=_UI_FONT, size=10),
+                         text_color="#94A3B8", anchor="w").pack(anchor="w", padx=10, pady=(7, 1))
+            ctk.CTkLabel(cell, textvariable=var,
+                         font=ctk.CTkFont(family=_UI_FONT, size=12, weight="bold"),
+                         text_color="#0F172A", anchor="w",
+                         wraplength=190).pack(anchor="w", padx=10, pady=(0, 7))
+
+        stat_cell(grid, "Role",         self._role_var,  0, 0)
+        stat_cell(grid, "Project",       self._proj_var,  0, 1)
+        stat_cell(grid, "Designation",   self._desig_var, 1, 0)
+        stat_cell(grid, "Total Tracked", self._hours_var, 1, 1)
+        stat_cell(grid, "Today Active",  self._today_var, 2, 0)
+
         threading.Thread(target=self._load_profile_stats, daemon=True).start()
 
         # ── Logout button ────────────────────────────────
         ctk.CTkButton(
-            inner,
-            text="🚪  Logout & Stop Capture",
-            height=46,
-            fg_color="#FEF2F2",
-            border_width=1,
-            border_color="#FECACA",
-            text_color="#EF4444",
-            hover_color="#FEE2E2",
-            font=ctk.CTkFont(family="Lexend Deca", size=13, weight="bold"),
+            inner, text="🚪  Logout & Stop Capture", height=44,
+            fg_color="#FEF2F2", border_width=1, border_color="#FECACA",
+            text_color="#EF4444", hover_color="#FEE2E2",
+            font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
             command=self._logout,
         ).pack(fill="x", pady=(4, 8))
 
@@ -1036,54 +1138,228 @@ class DashboardWindow(ctk.CTkToplevel):
             children_fn(card)
         return card
 
-    def _refresh_status_badge(self, STATUS_COLORS):
-        s = self._task_status
-        bg, fg, label = STATUS_COLORS.get(s, ("#F1F5F9", "#64748B", s.capitalize()))
-        self._status_badge.configure(text=f"  {label}  ", fg_color=bg, text_color=fg)
+    # ── Task list helpers ─────────────────────────────────
 
-    def _update_task_status(self, new_status: str, STATUS_COLORS: dict):
-        if not self._task_id:
-            self._task_msg_var.set("⚠  No task linked to this session.")
-            return
-        if self._task_status == new_status:
-            return
-        self._task_msg_var.set("Updating…")
-        threading.Thread(
-            target=self._do_update_status,
-            args=(new_status, STATUS_COLORS),
-            daemon=True,
-        ).start()
+    def _toggle_add_form(self):
+        if self._add_form_visible:
+            self._add_form_frame.pack_forget()
+            self._add_form_visible = False
+        else:
+            self._add_form_frame.pack(fill="x", padx=12, pady=(0, 6),
+                                      before=self._tasks_container)
+            self._add_form_visible = True
+            self._add_var.set("")
+            self._add_entry.focus()
 
-    def _do_update_status(self, new_status: str, STATUS_COLORS: dict):
+    def _do_add_task(self):
+        title = self._add_var.get().strip()
+        if not title:
+            return
+        self._add_submit_btn.configure(text="Adding…", state="disabled")
+        self._add_var.set("")
+        threading.Thread(target=self._create_task_bg, args=(title,), daemon=True).start()
+
+    def _create_task_bg(self, title: str):
+        from datetime import date as date_cls
         try:
-            res = requests.patch(
-                f"{API_URL}/api/tasks/{self._task_id}/status",
-                json={"user_id": self.user_id, "status": new_status},
+            res = requests.post(
+                f"{API_URL}/api/tasks/quick",
+                json={"user_id": self.user_id, "title": title},
+                timeout=10,
+            )
+        except Exception:
+            res = None
+        self.after(0, lambda: self._add_submit_btn.configure(text="Add", state="normal"))
+        self.after(0, self._load_all_tasks)
+
+    def _load_all_tasks(self):
+        from datetime import date as date_cls
+        try:
+            today = date_cls.today().isoformat()
+            res = requests.get(
+                f"{API_URL}/api/tasks/{self.user_id}",
+                params={"date": today},
                 timeout=8,
             )
             if res.status_code == 200:
-                self._task_status = new_status
-                self.after(0, lambda: self._refresh_status_badge(STATUS_COLORS))
-                self.after(0, lambda: self._task_msg_var.set("✓  Status updated"))
-                self.after(2500, lambda: self._task_msg_var.set(""))
-            else:
-                self.after(0, lambda: self._task_msg_var.set("⚠  Update failed. Try again."))
+                tasks = res.json().get("tasks", [])
+                self.after(0, lambda t=tasks: self._render_task_list(t))
+                return
+            if res.status_code == 404:
+                self.after(0, self._handle_invalid_session)
+                return
+            self.after(0, lambda c=res.status_code: self._show_tasks_error(c))
+        except requests.exceptions.ConnectionError:
+            self.after(0, lambda: self._show_tasks_error(None, "Cannot reach server"))
         except Exception:
-            self.after(0, lambda: self._task_msg_var.set("⚠  No connection."))
+            self.after(0, self._show_tasks_error)
+
+    def _handle_invalid_session(self):
+        _clear_session()
+        messagebox.showerror(
+            "Account Not Found",
+            f"Your account was not found on the server.\n\n"
+            f"Please register or sign in with credentials\n"
+            f"that match this server:\n{API_URL}",
+        )
+        self.is_capturing = False
+        try:
+            self._tracker.stop()
+            self._app_tracker.stop()
+        except Exception:
+            pass
+        self.destroy()
+        try:
+            self._login_win.error_var.set("⚠  Account not found. Please register or sign in.")
+            self._login_win.email_var.set("")
+            self._login_win.password_var.set("")
+            self._login_win.login_btn.configure(text="Sign In  →", state="normal")
+            self._login_win.deiconify()
+        except Exception:
+            pass
+
+    def _show_tasks_error(self, status_code=None, detail=None):
+        for w in self._tasks_container.winfo_children():
+            w.destroy()
+        msg = detail or (f"Server error {status_code}" if status_code else "Could not load tasks")
+        ctk.CTkLabel(self._tasks_container, text=f"⚠  {msg}",
+                     font=ctk.CTkFont(family=_UI_FONT, size=12),
+                     text_color="#EF4444").pack(pady=(12, 4))
+        ctk.CTkButton(
+            self._tasks_container, text="Retry", height=28, width=70,
+            font=ctk.CTkFont(family=_UI_FONT, size=11, weight="bold"),
+            fg_color="#EEF2FF", hover_color="#DBEAFE", text_color="#4F63D2",
+            corner_radius=8,
+            command=lambda: threading.Thread(target=self._load_all_tasks, daemon=True).start(),
+        ).pack(pady=(0, 12))
+
+    def _render_task_list(self, tasks: list):
+        for w in self._tasks_container.winfo_children():
+            w.destroy()
+
+        total     = len(tasks)
+        completed = sum(1 for t in tasks if t["status"] == "completed")
+        self._kpi_tasks_var.set(str(total))
+        self._kpi_done_var.set(str(completed))
+        self._task_count_badge.configure(text=f"  {total}  ")
+
+        if not tasks:
+            ctk.CTkLabel(self._tasks_container,
+                         text="No tasks yet — tap + Add to create one",
+                         font=ctk.CTkFont(family=_UI_FONT, size=12),
+                         text_color="#94A3B8").pack(pady=16)
+            return
+
+        PRI_COLOR = {"high": "#DC2626", "medium": "#D97706", "low": "#16A34A"}
+        STA_COLOR = {
+            "pending":     ("#FEF3C7", "#D97706", "Pending"),
+            "in_progress": ("#EEF2FF", "#4F63D2", "In Progress"),
+            "completed":   ("#F0FDF4", "#16A34A", "Done"),
+        }
+
+        for t in tasks:
+            tid      = t["id"]
+            title    = t["title"]
+            status   = t["status"]
+            pri      = t.get("priority", "medium")
+            pc       = PRI_COLOR.get(pri, "#94A3B8")
+            s_bg, s_fg, s_lbl = STA_COLOR.get(status, ("#F1F5F9", "#64748B", status.capitalize()))
+            is_done  = status == "completed"
+
+            row = ctk.CTkFrame(self._tasks_container, fg_color="#FFFFFF",
+                               corner_radius=10, border_color="#E2E8F0", border_width=1)
+            row.pack(fill="x", pady=(0, 6))
+
+            stripe = ctk.CTkFrame(row, fg_color=pc, corner_radius=0, width=4)
+            stripe.pack(side="left", fill="y")
+            stripe.pack_propagate(False)
+
+            body = ctk.CTkFrame(row, fg_color="transparent")
+            body.pack(side="left", fill="both", expand=True, padx=(10, 8), pady=8)
+
+            title_row = ctk.CTkFrame(body, fg_color="transparent")
+            title_row.pack(fill="x")
+            ctk.CTkLabel(title_row, text=title, anchor="w",
+                         font=ctk.CTkFont(family=_UI_FONT, size=12, weight="bold"),
+                         text_color="#94A3B8" if is_done else "#0F172A",
+                         wraplength=320).pack(side="left")
+            ctk.CTkLabel(title_row, text=f" {pri.capitalize()} ",
+                         font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
+                         fg_color=pc + "25", text_color=pc,
+                         corner_radius=6).pack(side="right", padx=(4, 0))
+
+            sts_row = ctk.CTkFrame(body, fg_color="transparent")
+            sts_row.pack(fill="x", pady=(4, 0))
+            ctk.CTkLabel(sts_row, text=f"  {s_lbl}  ",
+                         font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
+                         fg_color=s_bg, text_color=s_fg,
+                         corner_radius=6).pack(side="left")
+
+            if not is_done:
+                def _mk(lbl, ns, i=tid):
+                    return ctk.CTkButton(
+                        sts_row, text=lbl, height=22, width=80,
+                        font=ctk.CTkFont(family=_UI_FONT, size=9, weight="bold"),
+                        fg_color="#F1F5F9", hover_color="#E2E8F0",
+                        text_color="#475569", corner_radius=6,
+                        command=lambda s=ns, x=i: self._on_task_status_change(x, s),
+                    )
+                if status != "in_progress":
+                    _mk("In Progress", "in_progress").pack(side="right", padx=(4, 0))
+                _mk("Done ✓", "completed").pack(side="right", padx=(4, 0))
+
+    def _on_task_status_change(self, task_id: int, new_status: str):
+        threading.Thread(
+            target=self._do_change_task_status,
+            args=(task_id, new_status),
+            daemon=True,
+        ).start()
+
+    def _do_change_task_status(self, task_id: int, new_status: str):
+        try:
+            res = requests.patch(
+                f"{API_URL}/api/tasks/{task_id}/status",
+                json={"user_id": self.user_id, "status": new_status},
+                timeout=8,
+            )
+            if res.status_code == 200 and task_id == self._task_id:
+                self._task_status = new_status
+        except Exception:
+            pass
+        self.after(0, self._load_all_tasks)
 
     def _load_profile_stats(self):
+        # ── Profile data (same API as website) ───────────
+        try:
+            prof = requests.get(f"{API_URL}/api/users/{self.user_id}/profile", timeout=8)
+            if prof.status_code == 404:
+                self.after(0, self._handle_invalid_session)
+                return
+            if prof.status_code == 200:
+                d = prof.json()
+                self.after(0, lambda: self._proj_var.set(d.get("project") or "—"))
+                self.after(0, lambda: self._desig_var.set(d.get("designation") or "—"))
+                role = d.get("user_type", "user").replace("user", "Employee").replace("admin", "Admin")
+                self.after(0, lambda: self._role_var.set(role))
+        except Exception:
+            pass
+
+        # ── Activity stats ───────────────────────────────
         try:
             res = requests.get(f"{API_URL}/api/users/{self.user_id}/stats", timeout=8)
             if res.status_code == 200:
-                data = res.json()
-                hours = data.get("total_tracked_hours", 0)
+                data      = res.json()
+                hours     = data.get("total_tracked_hours", 0)
                 today_min = data.get("today_active_min", 0)
                 today_pct = data.get("today_activity_pct", 0)
-                self.after(0, lambda: self._hours_var.set(f"{hours} hrs total"))
-                self.after(0, lambda: self._today_var.set(f"{today_min} min  ({today_pct}% active)"))
+                self.after(0, lambda: self._hours_var.set(f"{hours} hrs"))
+                self.after(0, lambda: self._today_var.set(f"{today_min} min ({today_pct}% active)"))
+                self.after(0, lambda: self._kpi_active_var.set(f"{today_min}m"))
+                return
         except Exception:
-            self.after(0, lambda: self._hours_var.set("—"))
-            self.after(0, lambda: self._today_var.set("—"))
+            pass
+        self.after(0, lambda: self._hours_var.set("—"))
+        self.after(0, lambda: self._today_var.set("—"))
 
     # ── Logging ──────────────────────────────────────────
     def _log(self, message: str):
@@ -1181,7 +1457,13 @@ class DashboardWindow(ctk.CTkToplevel):
                 time.sleep(0.5)
 
     def _update_stats(self, _time_str: str, _size_kb: int):
-        pass
+        try:
+            n = self.screenshot_count
+            self._screenshots_var.set(
+                f"{n} screenshot{'s' if n != 1 else ''} uploaded"
+            )
+        except Exception:
+            pass
 
     def _poll_activity_status(self):
         """Periodic poll — kept for future use."""

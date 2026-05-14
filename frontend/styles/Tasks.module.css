@@ -150,9 +150,66 @@
 .successMsg { background: var(--rp-success-soft); color: var(--rp-success); border: 1px solid #bbf7d0; }
 .errorMsg { background: var(--rp-danger-soft); color: var(--rp-danger); border: 1px solid #fecaca; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Welcome banner ───────────────────────────────────── */
+.welcomeBanner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.welcomeGreet { font-size: 23px; font-weight: 750; color: var(--rp-text); margin: 0 0 4px; }
+.welcomeSub { font-size: 13px; color: var(--rp-text-muted); margin: 0; }
+.welcomeRight { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── KPI strip ────────────────────────────────────────── */
+.kpiStrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.kpiCard { background: #fff; border: 1px solid var(--rp-border); border-radius: 12px; box-shadow: var(--rp-shadow-sm); padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+.kpiIcon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpiNum { font-size: 26px; font-weight: 800; line-height: 1.1; color: var(--rp-text); }
+.kpiLbl { font-size: 12px; color: var(--rp-text-muted); font-weight: 650; margin-top: 2px; }
+
+/* ── Create form ──────────────────────────────────────── */
+.createForm { display: flex; flex-direction: column; gap: 10px; }
+.createFormTop { display: flex; gap: 10px; align-items: flex-start; }
+.prioritySelect { width: auto !important; min-width: 130px; flex-shrink: 0; }
+.errorInline { color: var(--rp-danger); font-size: 13px; }
+.alertError { color: var(--rp-danger); font-size: 13px; margin-bottom: 12px; padding: 10px 14px; background: var(--rp-danger-soft); border-radius: 8px; border: 1px solid #FECACA; }
+
+/* ── Filter bar ───────────────────────────────────────── */
+.filterBar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.filterTabs { display: flex; align-items: center; gap: 2px; background: #F8FAFC; border: 1px solid var(--rp-border); border-radius: 8px; padding: 3px; }
+.filterTab { min-height: 28px; padding: 4px 12px; border: 0; background: transparent; color: var(--rp-text-muted); font-size: 12px; font-weight: 650; cursor: pointer; border-radius: 6px; font-family: inherit; transition: all .15s; }
+.filterTabActive { background: #fff; color: var(--rp-primary); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.viewToggle { display: flex; align-items: center; gap: 2px; background: #F8FAFC; border: 1px solid var(--rp-border); border-radius: 8px; padding: 3px; margin-left: auto; }
+.viewBtn { width: 30px; height: 30px; border: 0; background: transparent; color: var(--rp-text-muted); cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.viewBtnActive { background: #fff; color: var(--rp-primary); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+/* ── Kanban board ─────────────────────────────────────── */
+.kanbanBoard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.kanbanCol { background: #F8FAFC; border: 1px solid var(--rp-border); border-radius: 12px; overflow: hidden; }
+.kanbanColHeader { background: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-top: 3px solid; border-bottom: 1px solid var(--rp-border-soft); }
+.kanbanColLabel { font-size: 13px; font-weight: 750; }
+.kanbanColCount { font-size: 11px; font-weight: 750; padding: 2px 8px; border-radius: 999px; background: #F3F6FB; color: var(--rp-text-muted); border: 1px solid var(--rp-border-soft); }
+.kanbanCards { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+.kanbanEmpty { text-align: center; color: var(--rp-text-soft); font-size: 12px; padding: 20px; }
+
+/* ── Rich task card ───────────────────────────────────── */
+.tCard { background: #fff; border: 1px solid var(--rp-border); border-radius: 12px; box-shadow: var(--rp-shadow-sm); overflow: hidden; transition: border-color .16s, box-shadow .16s; }
+.tCard:hover { border-color: #c7d2fe; box-shadow: 0 4px 16px rgba(79,70,229,.08); }
+.tCardDone { opacity: .78; }
+.tCardDone .taskTitle { color: var(--rp-text-soft) !important; text-decoration: line-through; }
+.tCardMain { display: flex; align-items: center; }
+.tPriorityStripe { width: 4px; align-self: stretch; flex-shrink: 0; }
+.tCardBody { flex: 1; padding: 13px 14px; min-width: 0; }
+.tTitleRow { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.tPriorityBadge { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 9px; font-size: 11px; font-weight: 750; flex-shrink: 0; }
+.tCard .taskActions { padding-right: 14px; flex-shrink: 0; flex-wrap: nowrap; }
+.editInlineForm { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 1100px) { .kpiStrip { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 900px) {
   .sidebar, .calSidebar { display: none; }
   .main { padding: 22px 16px; }
   .layout, .formGrid, .fieldsGrid { grid-template-columns: 1fr; }
   .contentWrap { display: block; }
+  .kanbanBoard { grid-template-columns: 1fr; }
+  .kpiStrip { grid-template-columns: repeat(2, 1fr); }
+  .viewToggle { margin-left: 0; }
 }

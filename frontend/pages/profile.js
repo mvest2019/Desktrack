@@ -42,8 +42,11 @@ export default function ProfilePage() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+      } else if (res.status === 404) {
+        localStorage.removeItem("user");
+        router.replace("/?reason=account_not_found");
       } else {
-        setProfileError(`Server error ${res.status}. Please try again.`);
+        setProfileError(`Server error ${res.status}. Your session may be stale — try signing out and back in.`);
       }
     } catch {
       setProfileError("Cannot connect to server. Make sure the backend is running.");

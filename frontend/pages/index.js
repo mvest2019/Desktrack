@@ -23,6 +23,13 @@ export default function LoginPage() {
   const [loading,  setLoading]  = useState(false);
   const [showPass, setShowPass] = useState(false);
 
+  useEffect(() => {
+    const { reason } = router.query;
+    if (reason === "account_not_found") {
+      setError("Your account was not found on the server. Please register or sign in with the correct credentials.");
+    }
+  }, [router.query]);
+
   async function handleLogin(e) {
     e.preventDefault();
     setError("");
@@ -76,6 +83,23 @@ export default function LoginPage() {
               Empower your team with smarter workflows, seamless collaboration, and AI-powered task analysis that helps turn daily work into actionable insights.
             </p>
 
+            <div className={styles.heroStats}>
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatVal}>Real‑time</span>
+                <span className={styles.heroStatLabel}>Screenshot sync</span>
+              </div>
+              <div className={styles.heroStatDivider} />
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatVal}>AI‑powered</span>
+                <span className={styles.heroStatLabel}>Activity insights</span>
+              </div>
+              <div className={styles.heroStatDivider} />
+              <div className={styles.heroStat}>
+                <span className={styles.heroStatVal}>Secure</span>
+                <span className={styles.heroStatLabel}>End‑to‑end data</span>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -89,7 +113,9 @@ export default function LoginPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Email Address</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>@</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+                  </span>
                   <input
                     type="email"
                     className={styles.input}
@@ -105,7 +131,9 @@ export default function LoginPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>#</span>
+                  <span className={styles.inputIcon}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </span>
                   <input
                     type={showPass ? "text" : "password"}
                     className={styles.input}
