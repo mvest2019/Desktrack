@@ -62,21 +62,15 @@ export default function TasksPage() {
   const [dateFilter,  setDateFilter]  = useState(todayStr);
   const [calOpen,     setCalOpen]     = useState(false);
   const [showForm,    setShowForm]    = useState(false);
-  const [submitting,  setSubmitting]  = useState(false);
-  const [expandedNotes, setExpandedNotes] = useState({});
-  const [noteInputs,  setNoteInputs]  = useState({});
-  const [editingId,   setEditingId]   = useState(null);
-  const [editForm,    setEditForm]    = useState({});
-  const [updatingId,  setUpdatingId]  = useState(null);
+  const [submitting,   setSubmitting]   = useState(false);
+  const [createError,  setCreateError]  = useState("");
+  const [statusError,  setStatusError]  = useState("");
+  const [fetchError,   setFetchError]   = useState("");
+  const [editingId,    setEditingId]    = useState(null);
+  const [updatingId,   setUpdatingId]   = useState(null);
 
-  const [form, setForm] = useState({
-    title: "", description: "", priority: "medium",
-    expected_completion_time: "", notes: "",
-  });
-  const [durNum,  setDurNum]  = useState("");
-  const [durUnit, setDurUnit] = useState("hr");
-  const [editDurNum,  setEditDurNum]  = useState("");
-  const [editDurUnit, setEditDurUnit] = useState("hr");
+  const [form, setForm] = useState({ title: "" });
+  const [editTitle, setEditTitle] = useState("");
 
   // Close calendar on outside click
   useEffect(() => {
@@ -100,15 +94,20 @@ export default function TasksPage() {
 
   async function fetchAll(userId, date) {
     setLoading(true);
+    setFetchError("");
     try {
       const [tasksRes, sumRes] = await Promise.all([
         fetch(`${API}/api/tasks/${userId}?date=${date}`),
         fetch(`${API}/api/tasks/${userId}/summary?date=${date}`),
       ]);
-      if (tasksRes.ok)  setTasks((await tasksRes.json()).tasks || []);
-      if (sumRes.ok)    setSummary(await sumRes.json());
-    } catch (_) {}
-    finally { setLoading(false); }
+      if (tasksRes.ok) setTasks((await tasksRes.json()).tasks || []);
+      else setFetchError("Failed to load tasks.");
+      if (sumRes.ok) setSummary(await sumRes.json());
+    } catch {
+      setFetchError("Cannot connect to server. Make sure the backend is running.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function logout() { localStorage.removeItem("user"); router.push("/"); }
@@ -118,35 +117,49 @@ export default function TasksPage() {
     e.preventDefault();
     if (!form.title.trim()) return;
     setSubmitting(true);
-    const ect = durNum.trim() ? `${durNum.trim()} ${durUnit}` : "";
+    setCreateError("");
     try {
       const res = await fetch(`${API}/api/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.user_id, ...form, expected_completion_time: ect }),
+        body: JSON.stringify({ user_id: user.user_id, title: form.title.trim() }),
       });
-      if (res.ok) {
-        setForm({ title: "", description: "", priority: "medium", expected_completion_time: "", notes: "" });
-        setDurNum(""); setDurUnit("hr");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setForm({ title: "" });
         setShowForm(false);
         fetchAll(user.user_id, dateFilter);
+      } else {
+        setCreateError(data.detail || "Failed to add task.");
       }
-    } catch (_) {}
-    finally { setSubmitting(false); }
+    } catch {
+      setCreateError("Cannot connect to server.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   // ── Status change ────────────────────────────────────────
   async function changeStatus(taskId, status) {
     setUpdatingId(taskId);
+    setStatusError("");
     try {
       const res = await fetch(`${API}/api/tasks/${taskId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.user_id, status }),
       });
-      if (res.ok) await fetchAll(user.user_id, dateFilter);
-    } catch (_) {}
-    finally { setUpdatingId(null); }
+      if (res.ok) {
+        await fetchAll(user.user_id, dateFilter);
+      } else {
+        const d = await res.json();
+        setStatusError(d.detail || "Status update failed.");
+      }
+    } catch {
+      setStatusError("Cannot connect to server.");
+    } finally {
+      setUpdatingId(null);
+    }
   }
 
   // ── Delete task ──────────────────────────────────────────
@@ -158,36 +171,18 @@ export default function TasksPage() {
     } catch (_) {}
   }
 
-  // ── Add note ─────────────────────────────────────────────
-  async function addNote(taskId) {
-    const note = (noteInputs[taskId] || "").trim();
-    if (!note) return;
-    try {
-      await fetch(`${API}/api/tasks/${taskId}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.user_id, note }),
-      });
-      setNoteInputs(n => ({ ...n, [taskId]: "" }));
-      fetchAll(user.user_id, dateFilter);
-    } catch (_) {}
-  }
-
-  // ── Inline edit ──────────────────────────────────────────
+  // ── Inline edit (title only) ─────────────────────────────
   function startEdit(task) {
     setEditingId(task.id);
-    setEditForm({ title: task.title, description: task.description || "", priority: task.priority, expected_completion_time: task.expected_completion_time || "" });
-    const parts = (task.expected_completion_time || "").trim().split(" ");
-    setEditDurNum(parts[0] && !isNaN(parts[0]) ? parts[0] : "");
-    setEditDurUnit(parts[1] || "hr");
+    setEditTitle(task.title);
   }
   async function saveEdit(taskId) {
-    const ect = editDurNum.trim() ? `${editDurNum.trim()} ${editDurUnit}` : "";
+    if (!editTitle.trim()) return;
     try {
       await fetch(`${API}/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.user_id, ...editForm, expected_completion_time: ect }),
+        body: JSON.stringify({ user_id: user.user_id, title: editTitle.trim() }),
       });
       setEditingId(null);
       fetchAll(user.user_id, dateFilter);
@@ -198,45 +193,6 @@ export default function TasksPage() {
     if (!iso) return "";
     return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }
-
-  // Parse "1 hr", "2 days", "30 min" etc. → total minutes (null if unparseable)
-  function parseExpectedMinutes(str) {
-    if (!str) return null;
-    const s = str.toLowerCase().trim();
-    const match = s.match(/^([\d.]+)\s*(day|days|hr|hrs|hour|hours|min|mins|minute|minutes)$/);
-    if (!match) return null;
-    const val = parseFloat(match[1]);
-    const unit = match[2];
-    if (unit.startsWith("day"))  return Math.round(val * 1440);
-    if (unit.startsWith("h"))    return Math.round(val * 60);
-    if (unit.startsWith("min"))  return Math.round(val);
-    return null;
-  }
-
-  function fmtDuration(minutes) {
-    if (minutes < 60)  return `${minutes}m`;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    if (minutes < 1440) return m > 0 ? `${h}h ${m}m` : `${h}h`;
-    const d = Math.floor(minutes / 1440);
-    const rh = Math.floor((minutes % 1440) / 60);
-    return rh > 0 ? `${d}d ${rh}h` : `${d}d`;
-  }
-
-  // Returns completion summary info for a completed task
-  function completionInfo(task) {
-    if (task.status !== "completed" || !task.completed_at) return null;
-    const takenMin = Math.round((new Date(task.completed_at) - new Date(task.created_at)) / 60000);
-    const expectedMin = parseExpectedMinutes(task.expected_completion_time);
-    return {
-      completedAt: fmtTime(task.completed_at),
-      taken: fmtDuration(takenMin),
-      expected: expectedMin ? fmtDuration(expectedMin) : task.expected_completion_time || null,
-      early: expectedMin != null ? takenMin <= expectedMin : null,
-    };
-  }
-
-  const priorityDotColor = { high: "#F87171", medium: "#F59E0B", low: "#34D399" };
 
   if (!user) return null;
 
@@ -254,15 +210,15 @@ export default function TasksPage() {
             <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
-            <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
-            <Link className={styles.navItem} href="/screenshots"><span>📷</span> Screenshots</Link>
-            <Link className={styles.navItem} href="/activity"><span>🖥</span> Activity</Link>
-            <Link className={`${styles.navItem} ${styles.active}`} href="/tasks"><span>✅</span> My Tasks</Link>
-            <Link className={styles.navItem} href="/profile"><span>👤</span> Profile</Link>
+            <Link className={styles.navItem} href="/dashboard"><span>DB</span> Dashboard</Link>
+            <Link className={styles.navItem} href="/screenshots"><span>SC</span> Screenshots</Link>
+            <Link className={styles.navItem} href="/activity"><span>AC</span> Activity</Link>
+            <Link className={`${styles.navItem} ${styles.active}`} href="/tasks"><span>TK</span> My Tasks</Link>
+            <Link className={styles.navItem} href="/profile"><span>PF</span> Profile</Link>
             {user.user_type === "admin" && (
               <>
-                <Link className={styles.navItem} href="/admin"><span>🛡</span> Admin Portal</Link>
-                <Link className={styles.navItem} href="/admin-tasks"><span>📋</span> Task Overview</Link>
+                <Link className={styles.navItem} href="/admin"><span>AD</span> Admin Portal</Link>
+                <Link className={styles.navItem} href="/admin-tasks"><span>OV</span> Task Overview</Link>
               </>
             )}
           </nav>
@@ -330,57 +286,39 @@ export default function TasksPage() {
             </div>
           )}
 
-          {/* Create task form */}
+          {/* Create task form — title only */}
           {showForm && (
             <div className={styles.formPanel}>
               <div className={styles.formTitle}>New Task</div>
-              <form onSubmit={handleCreate}>
-                <div className={styles.formGrid}>
-                  <div className={styles.formGroupFull}>
-                    <label className={styles.formLabel}>Task Title *</label>
-                    <input className={styles.formInput} placeholder="What do you need to do?"
-                      value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
-                  </div>
-                  <div className={styles.formGroupFull}>
-                    <label className={styles.formLabel}>Description</label>
-                    <textarea className={styles.formTextarea} placeholder="Any additional details..."
-                      value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Priority</label>
-                    <select className={styles.formSelect} value={form.priority}
-                      onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label className={styles.formLabel}>Expected Completion</label>
-                    <div className={styles.durationRow}>
-                      <input className={styles.durationNum} type="number" min="1" placeholder="e.g. 2"
-                        value={durNum} onChange={e => setDurNum(e.target.value)} />
-                      <select className={styles.durationUnit} value={durUnit} onChange={e => setDurUnit(e.target.value)}
-                        style={{ background: "#1e2436", color: "#ffffff" }}>
-                        <option value="min"  style={{ background: "#1e2436", color: "#ffffff" }}>min</option>
-                        <option value="hr"   style={{ background: "#1e2436", color: "#ffffff" }}>hr</option>
-                        <option value="day"  style={{ background: "#1e2436", color: "#ffffff" }}>day</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className={styles.formGroupFull}>
-                    <label className={styles.formLabel}>Starting Note (optional)</label>
-                    <textarea className={styles.formTextarea} placeholder="Add a starting note..." rows={2}
-                      value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-                  </div>
-                </div>
-                <div className={styles.formActions}>
-                  <button type="submit" className={styles.btnPrimary} disabled={submitting}>
-                    {submitting ? "Adding..." : "Add Task"}
-                  </button>
-                  <button type="button" className={styles.btnCancel} onClick={() => setShowForm(false)}>Cancel</button>
-                </div>
+              <form onSubmit={handleCreate} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <input
+                  className={styles.formInput}
+                  style={{ flex: 1 }}
+                  placeholder="What do you need to do today?"
+                  value={form.title}
+                  onChange={e => { setForm({ title: e.target.value }); setCreateError(""); }}
+                  autoFocus
+                  required
+                  disabled={submitting}
+                />
+                <button type="submit" className={styles.btnPrimary} disabled={submitting}>
+                  {submitting ? "Adding…" : "Add Task"}
+                </button>
+                <button type="button" className={styles.btnCancel} onClick={() => { setShowForm(false); setCreateError(""); }}>Cancel</button>
               </form>
+              {createError && <div style={{ color: "#EF4444", fontSize: 13, marginTop: 8 }}>⚠ {createError}</div>}
+            </div>
+          )}
+
+          {statusError && (
+            <div style={{ color: "#EF4444", fontSize: 13, marginBottom: 12, padding: "10px 14px", background: "#FEF2F2", borderRadius: 8, border: "1px solid #FECACA" }}>
+              ⚠ {statusError}
+            </div>
+          )}
+
+          {fetchError && (
+            <div style={{ color: "#EF4444", fontSize: 13, marginBottom: 12, padding: "10px 14px", background: "#FEF2F2", borderRadius: 8, border: "1px solid #FECACA" }}>
+              ⚠ {fetchError}
             </div>
           )}
 
@@ -397,162 +335,71 @@ export default function TasksPage() {
           ) : (
             <div className={styles.taskList}>
               {tasks.map(task => {
-                const isEditing  = editingId === task.id;
-                const notesOpen  = expandedNotes[task.id];
+                const isEditing   = editingId === task.id;
                 const isCompleted = task.status === "completed";
 
                 return (
                   <div key={task.id} className={`${styles.taskCard} ${isCompleted ? styles.taskCompleted : ""}`}>
                     <div className={styles.taskCardInner}>
                       {isEditing ? (
-                        /* ── Inline edit form ── */
-                        <div>
-                          <div className={styles.formGrid} style={{ marginBottom: 10 }}>
-                            <div className={styles.formGroupFull}>
-                              <input className={styles.formInput} value={editForm.title}
-                                onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} />
-                            </div>
-                            <div className={styles.formGroupFull}>
-                              <textarea className={styles.formTextarea} rows={2} value={editForm.description}
-                                onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} />
-                            </div>
-                            <div className={styles.formGroup}>
-                              <select className={styles.formSelect} value={editForm.priority}
-                                onChange={e => setEditForm(f => ({ ...f, priority: e.target.value }))}>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                              </select>
-                            </div>
-                            <div className={styles.formGroup}>
-                              <div className={styles.durationRow}>
-                                <input className={styles.durationNum} type="number" min="1" placeholder="e.g. 2"
-                                  value={editDurNum} onChange={e => setEditDurNum(e.target.value)} />
-                                <select className={styles.durationUnit} value={editDurUnit} onChange={e => setEditDurUnit(e.target.value)}
-                                  style={{ background: "#1e2436", color: "#ffffff" }}>
-                                  <option value="min"  style={{ background: "#1e2436", color: "#ffffff" }}>min</option>
-                                  <option value="hr"   style={{ background: "#1e2436", color: "#ffffff" }}>hr</option>
-                                  <option value="day"  style={{ background: "#1e2436", color: "#ffffff" }}>day</option>
-                                </select>
-                              </div>
-                            </div>
-                          </div>
-                          <div className={styles.formActions}>
-                            <button className={styles.btnPrimary} onClick={() => saveEdit(task.id)}>Save</button>
-                            <button className={styles.btnCancel} onClick={() => setEditingId(null)}>Cancel</button>
-                          </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input
+                            className={styles.formInput}
+                            style={{ flex: 1 }}
+                            value={editTitle}
+                            onChange={e => setEditTitle(e.target.value)}
+                            onKeyDown={e => { if (e.key === "Enter") saveEdit(task.id); if (e.key === "Escape") setEditingId(null); }}
+                            autoFocus
+                          />
+                          <button className={styles.btnPrimary} onClick={() => saveEdit(task.id)}>Save</button>
+                          <button className={styles.btnCancel} onClick={() => setEditingId(null)}>Cancel</button>
                         </div>
                       ) : (
-                        /* ── Normal card view ── */
-                        <>
-                          <div className={styles.taskCardTop}>
-                            <div className={styles.taskCardLeft}>
-                              <div className={styles.priorityDot} style={{ background: priorityDotColor[task.priority] }} />
-                              <div>
-                                <div className={styles.taskTitle}>{task.title}</div>
-                                {task.description && <div className={styles.taskDesc}>{task.description}</div>}
-                                <div className={styles.taskMeta}>
-                                  <span className={`${styles.statusBadge} ${
-                                    task.status === "completed" ? styles.statusCompleted :
-                                    task.status === "in_progress" ? styles.statusInProgress : styles.statusPending
-                                  }`}>
-                                    {task.status === "in_progress" ? "⏳ In Progress" :
-                                     task.status === "completed"   ? "✓ Done"         : "Pending"}
-                                  </span>
-                                  <span className={`${styles.priorityBadge} ${
-                                    task.priority === "high" ? styles.priorityHigh :
-                                    task.priority === "low"  ? styles.priorityLow  : styles.priorityMedium
-                                  }`}>
-                                    {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                                  </span>
-                                  {task.expected_completion_time && task.status !== "completed" && (
-                                    <span className={styles.taskExpected}>⏱ {task.expected_completion_time}</span>
-                                  )}
-                                </div>
-                                {/* Completion info strip */}
-                                {(() => {
-                                  const info = completionInfo(task);
-                                  if (!info) return null;
-                                  return (
-                                    <div className={styles.completionStrip}>
-                                      <span>✓ Completed at {info.completedAt}</span>
-                                      <span className={styles.completionDot}>·</span>
-                                      <span>Took {info.taken}</span>
-                                      {info.expected && (<>
-                                        <span className={styles.completionDot}>·</span>
-                                        <span>Expected: {info.expected}</span>
-                                        <span className={styles.completionDot}>·</span>
-                                        <span className={info.early ? styles.completionEarly : styles.completionLate}>
-                                          {info.early ? "✓ Within time" : "⏰ Overtime"}
-                                        </span>
-                                      </>)}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                            <div className={styles.taskActions}>
-                              {task.status === "pending" && isToday && (
-                                <button className={`${styles.actionBtn} ${styles.btnStart}`}
-                                  disabled={updatingId === task.id}
-                                  onClick={() => changeStatus(task.id, "in_progress")}>
-                                  {updatingId === task.id ? "..." : "Start"}
-                                </button>
-                              )}
-                              {task.status === "in_progress" && isToday && (
-                                <button className={`${styles.actionBtn} ${styles.btnComplete}`}
-                                  disabled={updatingId === task.id}
-                                  onClick={() => changeStatus(task.id, "completed")}>
-                                  {updatingId === task.id ? "..." : "✓ Done"}
-                                </button>
-                              )}
-                              {isToday && !isCompleted && (
-                                <button className={`${styles.actionBtn} ${styles.btnEdit}`} onClick={() => startEdit(task)} title="Edit">✎</button>
-                              )}
-                              {isToday && (
-                                <button className={`${styles.actionBtn} ${styles.btnDelete}`} onClick={() => deleteTask(task.id)} title="Delete">✕</button>
+                        <div className={styles.taskCardTop}>
+                          <div className={styles.taskCardLeft}>
+                            <div className={styles.taskTitle}>{task.title}</div>
+                            <div className={styles.taskMeta}>
+                              <span className={`${styles.statusBadge} ${
+                                task.status === "completed"   ? styles.statusCompleted  :
+                                task.status === "in_progress" ? styles.statusInProgress : styles.statusPending
+                              }`}>
+                                {task.status === "in_progress" ? "In Progress" :
+                                 task.status === "completed"   ? "✓ Done"      : "Pending"}
+                              </span>
+                              {task.completed_at && (
+                                <span className={styles.taskExpected}>
+                                  at {fmtTime(task.completed_at)}
+                                </span>
                               )}
                             </div>
                           </div>
-                        </>
+                          <div className={styles.taskActions}>
+                            {task.status === "pending" && isToday && (
+                              <button className={`${styles.actionBtn} ${styles.btnStart}`}
+                                disabled={updatingId === task.id}
+                                onClick={() => changeStatus(task.id, "in_progress")}>
+                                {updatingId === task.id ? "…" : "Start"}
+                              </button>
+                            )}
+                            {task.status === "in_progress" && isToday && (
+                              <button className={`${styles.actionBtn} ${styles.btnComplete}`}
+                                disabled={updatingId === task.id}
+                                onClick={() => changeStatus(task.id, "completed")}>
+                                {updatingId === task.id ? "…" : "✓ Done"}
+                              </button>
+                            )}
+                            {isToday && !isCompleted && (
+                              <button className={`${styles.actionBtn} ${styles.btnEdit}`}
+                                onClick={() => startEdit(task)} title="Edit">✎</button>
+                            )}
+                            {isToday && (
+                              <button className={`${styles.actionBtn} ${styles.btnDelete}`}
+                                onClick={() => deleteTask(task.id)} title="Delete">✕</button>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
-
-                    {/* Notes toggle */}
-                    <div className={styles.notesToggle} onClick={() => setExpandedNotes(n => ({ ...n, [task.id]: !n[task.id] }))}>
-                      <span>{notesOpen ? "▲" : "▼"}</span>
-                      <span>{task.notes.length} note{task.notes.length !== 1 ? "s" : ""}</span>
-                    </div>
-
-                    {/* Notes section */}
-                    {notesOpen && (
-                      <div className={styles.notesSection}>
-                        {task.notes.length === 0 && (
-                          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", marginBottom: 10 }}>No notes yet.</div>
-                        )}
-                        {task.notes.map(n => (
-                          <div key={n.id} className={styles.noteItem}>
-                            <div className={styles.noteDot} />
-                            <div>
-                              <div className={styles.noteText}>{n.note}</div>
-                              <div className={styles.noteTime}>{new Date(n.created_at).toLocaleString()}</div>
-                            </div>
-                          </div>
-                        ))}
-                        {isToday && (
-                          <div className={styles.addNoteForm}>
-                            <input
-                              className={styles.noteInput}
-                              placeholder="Add a progress note…"
-                              value={noteInputs[task.id] || ""}
-                              onChange={e => setNoteInputs(n => ({ ...n, [task.id]: e.target.value }))}
-                              onKeyDown={e => { if (e.key === "Enter") addNote(task.id); }}
-                            />
-                            <button className={styles.btnNote} onClick={() => addNote(task.id)}>Add Note</button>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })}

@@ -160,11 +160,11 @@ export default function ScreenshotsPage() {
             <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
-            <Link href="/dashboard" className={styles.navItem}><span>📊</span> Dashboard</Link>
-            <Link href="/screenshots" className={`${styles.navItem} ${styles.active}`}><span>📷</span> Screenshots</Link>
-            <Link href="/activity" className={styles.navItem}><span>🖥</span> Activity</Link>
-            <Link href="/tasks" className={styles.navItem}><span>✅</span> My Tasks</Link>
-            <Link href="/profile" className={styles.navItem}><span>👤</span> Profile</Link>
+            <Link href="/dashboard" className={styles.navItem}><span>DB</span> Dashboard</Link>
+            <Link href="/screenshots" className={`${styles.navItem} ${styles.active}`}><span>SC</span> Screenshots</Link>
+            <Link href="/activity" className={styles.navItem}><span>AC</span> Activity</Link>
+            <Link href="/tasks" className={styles.navItem}><span>TK</span> My Tasks</Link>
+            <Link href="/profile" className={styles.navItem}><span>PF</span> Profile</Link>
           </nav>
           <div className={styles.sidebarFooter}>
             <div className={styles.userBadge}>

@@ -44,6 +44,7 @@ from schemas import (
     AppSummaryResponse, AppSummaryEntry,
     AdminUserItem, AdminUsersResponse,
     UserProfileResponse, UserProfileUpdateRequest,
+    QuickTaskCreateRequest,
     TaskCreateRequest, TaskEditRequest, TaskStatusUpdateRequest,
     TaskNoteCreateRequest, TaskNoteItem, TaskItem,
     TaskListResponse, TaskSummaryResponse,
@@ -682,6 +683,82 @@ def _task_to_item(t: Task) -> TaskItem:
             for n in sorted(t.notes, key=lambda n: n.created_at)
         ],
     )
+
+
+@app.post("/api/tasks/quick", tags=["Tasks"])
+def quick_create_task(request: QuickTaskCreateRequest, db: Session = Depends(get_db)):
+    """Create a task with title only — used by the desktop app pre-monitoring prompt."""
+    from datetime import date as date_cls
+    user = db.query(User).filter(User.id == request.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    existing = db.query(Task).filter(
+        Task.user_id == request.user_id,
+        Task.task_date == date_cls.today(),
+    ).order_by(Task.created_at.asc()).first()
+    if existing:
+        return {"success": True, "task_id": existing.id, "title": existing.title,
+                "status": existing.status, "existing": True}
+
+    task = Task(
+        user_id=request.user_id,
+        title=request.title.strip(),
+        priority="medium",
+        status="pending",
+        task_date=date_cls.today(),
+    )
+    db.add(task)
+    db.commit()
+    db.refresh(task)
+    log.info("✅ Quick task created: user=%s title=%r", request.user_id, request.title)
+    return {"success": True, "task_id": task.id, "title": task.title,
+            "status": task.status, "existing": False}
+
+
+@app.get("/api/tasks/{user_id}/today", tags=["Tasks"])
+def get_today_task(user_id: int, db: Session = Depends(get_db)):
+    """Return today's first task for the desktop app (title + status only)."""
+    from datetime import date as date_cls
+    task = db.query(Task).filter(
+        Task.user_id == user_id,
+        Task.task_date == date_cls.today(),
+    ).order_by(Task.created_at.asc()).first()
+    if not task:
+        return {"success": False, "task": None}
+    return {"success": True, "task": {"id": task.id, "title": task.title, "status": task.status}}
+
+
+@app.get("/api/users/{user_id}/stats", tags=["Profile"])
+def get_user_stats(user_id: int, db: Session = Depends(get_db)):
+    """Return total tracked hours and today's activity for profile display."""
+    from datetime import date as date_cls
+    from sqlalchemy import func
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    total_active = db.query(func.sum(ActivityLog.active_seconds)).filter(
+        ActivityLog.user_id == user_id
+    ).scalar() or 0
+
+    today_start = datetime.combine(date_cls.today(), datetime.min.time())
+    today_logs = db.query(ActivityLog).filter(
+        ActivityLog.user_id == user_id,
+        ActivityLog.window_start >= today_start,
+    ).all()
+    today_active_sec = sum(l.active_seconds for l in today_logs)
+    today_pct = round(
+        sum(l.activity_percent for l in today_logs) / len(today_logs), 1
+    ) if today_logs else 0.0
+
+    return {
+        "user_id": user_id,
+        "total_tracked_hours": round(total_active / 3600, 1),
+        "today_active_sec": today_active_sec,
+        "today_active_min": round(today_active_sec / 60, 1),
+        "today_activity_pct": today_pct,
+    }
 
 
 @app.post("/api/tasks", tags=["Tasks"])

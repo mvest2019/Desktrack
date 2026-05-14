@@ -6,22 +6,25 @@ import Head from "next/head";
 import Link from "next/link";
 import styles from "../styles/Profile.module.css";
 import API from "../config";
+import TagInput from "../components/TagInput";
 
 export default function ProfilePage() {
   const router = useRouter();
 
-  const [user, setUser]           = useState(null);
-  const [profile, setProfile]     = useState(null);
-  const [editing, setEditing]     = useState(false);
-  const [loading, setLoading]     = useState(false);
+  const [user, setUser]             = useState(null);
+  const [profile, setProfile]       = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError,   setProfileError]   = useState("");
+  const [editing, setEditing]       = useState(false);
+  const [loading, setLoading]       = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg]   = useState("");
+  const [errorMsg, setErrorMsg]     = useState("");
 
   // Edit form state
   const [editUsername, setEditUsername]       = useState("");
   const [editDesignation, setEditDesignation] = useState("");
   const [editProject, setEditProject]         = useState("");
-  const [editSkills, setEditSkills]           = useState("");
+  const [editSkills, setEditSkills]           = useState([]);  // string[] for TagInput
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -32,20 +35,32 @@ export default function ProfilePage() {
   }, []);
 
   async function fetchProfile(userId) {
+    setProfileLoading(true);
+    setProfileError("");
     try {
       const res = await fetch(`${API}/api/users/${userId}/profile`);
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
+      } else {
+        setProfileError(`Server error ${res.status}. Please try again.`);
       }
-    } catch (_) {}
+    } catch {
+      setProfileError("Cannot connect to server. Make sure the backend is running.");
+    } finally {
+      setProfileLoading(false);
+    }
   }
 
   function startEdit() {
     setEditUsername(profile?.username || "");
     setEditDesignation(profile?.designation || "");
     setEditProject(profile?.project || "");
-    setEditSkills(profile?.skills || "");
+    setEditSkills(
+      profile?.skills
+        ? profile.skills.split(",").map(s => s.trim()).filter(Boolean)
+        : []
+    );
     setSuccessMsg("");
     setErrorMsg("");
     setEditing(true);
@@ -70,7 +85,7 @@ export default function ProfilePage() {
           username: editUsername.trim(),
           designation: editDesignation.trim() || null,
           project: editProject || null,
-          skills: editSkills.trim() || null,
+          skills: editSkills.length ? editSkills.join(", ") : null,
         }),
       });
       const data = await res.json();
@@ -102,7 +117,24 @@ export default function ProfilePage() {
     return new Date(iso).toLocaleDateString([], { year: "numeric", month: "long", day: "numeric" });
   }
 
-  if (!user || !profile) return null;
+  if (!user) return null;
+
+  if (profileLoading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontFamily: "sans-serif", color: "#64748B" }}>
+      Loading profile…
+    </div>
+  );
+
+  if (profileError) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", fontFamily: "sans-serif", gap: 12 }}>
+      <div style={{ color: "#EF4444", fontSize: 15 }}>⚠ {profileError}</div>
+      <button onClick={() => fetchProfile(user.user_id)} style={{ padding: "8px 18px", borderRadius: 8, background: "#4F63D2", color: "#fff", border: "none", cursor: "pointer" }}>
+        Retry
+      </button>
+    </div>
+  );
+
+  if (!profile) return null;
 
   return (
     <>
@@ -117,13 +149,13 @@ export default function ProfilePage() {
           </div>
 
           <nav className={styles.nav}>
-            <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
-            <Link className={styles.navItem} href="/screenshots"><span>📷</span> Screenshots</Link>
-            <Link className={styles.navItem} href="/activity"><span>🖥</span> Activity</Link>
-            <Link className={styles.navItem} href="/tasks"><span>✅</span> My Tasks</Link>
-            <Link className={`${styles.navItem} ${styles.active}`} href="/profile"><span>👤</span> Profile</Link>
+            <Link className={styles.navItem} href="/dashboard"><span>DB</span> Dashboard</Link>
+            <Link className={styles.navItem} href="/screenshots"><span>SC</span> Screenshots</Link>
+            <Link className={styles.navItem} href="/activity"><span>AC</span> Activity</Link>
+            <Link className={styles.navItem} href="/tasks"><span>TK</span> My Tasks</Link>
+            <Link className={`${styles.navItem} ${styles.active}`} href="/profile"><span>PF</span> Profile</Link>
             {user.user_type === "admin" && (
-              <Link className={styles.navItem} href="/admin"><span>🛡</span> Admin Portal</Link>
+              <Link className={styles.navItem} href="/admin"><span>AD</span> Admin Portal</Link>
             )}
           </nav>
 
@@ -195,9 +227,17 @@ export default function ProfilePage() {
 
                   <div className={styles.fieldItem}>
                     <span className={styles.fieldLabel}>Skills</span>
-                    {profile.skills
-                      ? <span className={styles.fieldValue}>{profile.skills}</span>
-                      : <span className={styles.fieldEmpty}>Not set</span>}
+                    {profile.skills ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
+                        {profile.skills.split(",").map(s => s.trim()).filter(Boolean).map((s, i) => (
+                          <span key={i} style={{ background: "#EEF2FF", color: "#4F63D2", borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className={styles.fieldEmpty}>Not set</span>
+                    )}
                   </div>
 
                   <div className={styles.fieldItem}>
@@ -265,15 +305,10 @@ export default function ProfilePage() {
                   </div>
 
                   <div className={styles.formField}>
-                    <label className={styles.formLabel}>Skills</label>
-                    <input
-                      className={styles.formInput}
-                      type="text"
-                      value={editSkills}
-                      onChange={(e) => setEditSkills(e.target.value)}
-                      placeholder="e.g. Python, React, UI/UX"
-                      disabled={loading}
-                    />
+                    <label className={styles.formLabel}>
+                      Skills <span style={{ color: "#94A3B8", fontWeight: 400, fontSize: 11 }}>(Enter, comma, or space to add)</span>
+                    </label>
+                    <TagInput tags={editSkills} onChange={setEditSkills} placeholder="e.g. Python, React, UI/UX" disabled={loading} />
                   </div>
 
                   {errorMsg   && <div className={styles.errorMsg}>{errorMsg}</div>}

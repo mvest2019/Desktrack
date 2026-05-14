@@ -67,7 +67,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className={styles.heroPill}>⚡ AI-powered workforce intelligence</div>
+            <div className={styles.heroPill}>AI-powered workforce intelligence</div>
 
             <h1 className={styles.heroTitle}>
               Track every second of <span className={styles.heroAccent}>productivity.</span>
@@ -89,7 +89,7 @@ export default function LoginPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Email Address</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>✉</span>
+                  <span className={styles.inputIcon}>@</span>
                   <input
                     type="email"
                     className={styles.input}
@@ -105,7 +105,7 @@ export default function LoginPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>🔒</span>
+                  <span className={styles.inputIcon}>#</span>
                   <input
                     type={showPass ? "text" : "password"}
                     className={styles.input}
@@ -116,15 +116,15 @@ export default function LoginPage() {
                     disabled={loading}
                   />
                   <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)} tabIndex={-1}>
-                    {showPass ? "🙈" : "👁"}
+                    {showPass ? "Hide" : "Show"}
                   </button>
                 </div>
               </div>
 
-              {error && <div className={styles.errorBox}><span>⚠ {error}</span></div>}
+              {error && <div className={styles.errorBox}><span>{error}</span></div>}
 
               <button type="submit" className={styles.loginBtn} disabled={loading}>
-                {loading ? (<><span className={styles.spinner} /> Signing in...</>) : "Sign In →"}
+                {loading ? (<><span className={styles.spinner} /> Signing in...</>) : "Sign in"}
               </button>
             </form>
 

@@ -99,13 +99,13 @@ export default function AdminTasksPage() {
             <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
-            <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
-            <Link className={styles.navItem} href="/screenshots"><span>📷</span> Screenshots</Link>
-            <Link className={styles.navItem} href="/activity"><span>🖥</span> Activity</Link>
-            <Link className={styles.navItem} href="/tasks"><span>✅</span> My Tasks</Link>
-            <Link className={styles.navItem} href="/profile"><span>👤</span> Profile</Link>
-            <Link className={styles.navItem} href="/admin"><span>🛡</span> Admin Portal</Link>
-            <Link className={`${styles.navItem} ${styles.active}`} href="/admin-tasks"><span>📋</span> Task Overview</Link>
+            <Link className={styles.navItem} href="/dashboard"><span>DB</span> Dashboard</Link>
+            <Link className={styles.navItem} href="/screenshots"><span>SC</span> Screenshots</Link>
+            <Link className={styles.navItem} href="/activity"><span>AC</span> Activity</Link>
+            <Link className={styles.navItem} href="/tasks"><span>TK</span> My Tasks</Link>
+            <Link className={styles.navItem} href="/profile"><span>PF</span> Profile</Link>
+            <Link className={styles.navItem} href="/admin"><span>AD</span> Admin Portal</Link>
+            <Link className={`${styles.navItem} ${styles.active}`} href="/admin-tasks"><span>OV</span> Task Overview</Link>
           </nav>
           <div className={styles.sidebarFooter}>
             <div className={styles.userBadge}>
@@ -203,69 +203,31 @@ export default function AdminTasksPage() {
                 <div className={styles.emptyText}>No tasks found for the selected filters.</div>
               </div>
             ) : (
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>Employee</th>
-                      <th>Project</th>
-                      <th>Task</th>
-                      <th>Priority</th>
-                      <th>Status</th>
-                      <th>Expected</th>
-                      <th>Notes</th>
-                      <th>Created</th>
-                      <th>Completed</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map(t => (
-                      <tr key={t.task_id}>
-                        <td>
-                          <div className={styles.userCell}>
-                            <div className={styles.userAvatar}>{t.username?.charAt(0).toUpperCase()}</div>
-                            <span className={styles.userName2}>{t.username}</span>
-                          </div>
-                        </td>
-                        <td>
+              <div className={styles.taskCards}>
+                {tasks.map(t => (
+                  <div key={t.task_id} className={styles.taskCard}>
+                    <div className={styles.taskCardLeft}>
+                      <div className={styles.userCell}>
+                        <div className={styles.userAvatar}>{t.username?.charAt(0).toUpperCase()}</div>
+                        <div>
+                          <span className={styles.userName2}>{t.username}</span>
                           {t.project && <span className={styles.projectBadge}>{t.project}</span>}
-                        </td>
-                        <td style={{ maxWidth: 240 }}>
-                          <div style={{ fontWeight: 500, color: "#e2e8f0", marginBottom: 2 }}>{t.title}</div>
-                        </td>
-                        <td>
-                          <span className={`${styles.statusBadge} ${
-                            t.priority === "high" ? styles.priorityHigh :
-                            t.priority === "low"  ? styles.priorityLow  : styles.priorityMedium
-                          }`}>
-                            {t.priority.charAt(0).toUpperCase() + t.priority.slice(1)}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={`${styles.statusBadge} ${
-                            t.status === "completed"  ? styles.statusCompleted :
-                            t.status === "in_progress"? styles.statusInProgress: styles.statusPending
-                          }`}>
-                            {t.status === "in_progress" ? "In Progress" :
-                             t.status === "completed"   ? "Completed"   : "Pending"}
-                          </span>
-                        </td>
-                        <td style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                          {t.expected_completion_time || "—"}
-                        </td>
-                        <td style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                          {t.note_count}
-                        </td>
-                        <td style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
-                          {fmtTime(t.created_at)}
-                        </td>
-                        <td style={{ color: t.completed_at ? "#34D399" : "rgba(255,255,255,0.25)", fontSize: 12 }}>
-                          {t.completed_at ? fmtTime(t.completed_at) : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                      <div className={styles.taskTitle}>{t.title}</div>
+                    </div>
+                    <div className={styles.taskCardRight}>
+                      <span className={`${styles.statusBadge} ${
+                        t.status === "completed"   ? styles.statusCompleted  :
+                        t.status === "in_progress" ? styles.statusInProgress : styles.statusPending
+                      }`}>
+                        {t.status === "in_progress" ? "In Progress" :
+                         t.status === "completed"   ? "Completed"   : "Pending"}
+                      </span>
+                      <span className={styles.taskTime}>{fmtTime(t.created_at)}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

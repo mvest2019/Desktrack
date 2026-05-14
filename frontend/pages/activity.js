@@ -217,19 +217,19 @@ export default function ActivityPage() {
 
           <nav className={styles.nav}>
             <Link className={styles.navItem} href="/dashboard">
-              <span>📊</span> Dashboard
+              <span>DB</span> Dashboard
             </Link>
             <Link className={styles.navItem} href="/screenshots">
-              <span>📷</span> Screenshots
+              <span>SC</span> Screenshots
             </Link>
             <Link className={`${styles.navItem} ${styles.active}`} href="/activity">
-              <span>🖥</span> Activity
+              <span>AC</span> Activity
             </Link>
             <Link className={styles.navItem} href="/tasks">
-              <span>✅</span> My Tasks
+              <span>TK</span> My Tasks
             </Link>
             <Link className={styles.navItem} href="/profile">
-              <span>👤</span> Profile
+              <span>PF</span> Profile
             </Link>
           </nav>
 

@@ -163,6 +163,10 @@ class AdminUsersResponse(BaseModel):
 
 # ── Task schemas ─────────────────────────────────────────────
 
+class QuickTaskCreateRequest(BaseModel):
+    user_id: int
+    title:   str
+
 class TaskCreateRequest(BaseModel):
     user_id:                  int
     title:                    str

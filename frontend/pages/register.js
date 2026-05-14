@@ -5,6 +5,7 @@ import API from "../config";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Login.module.css";
+import TagInput from "../components/TagInput";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function RegisterPage() {
   const [userType,    setUserType]    = useState("user");
   const [project,     setProject]     = useState("");
   const [designation, setDesignation] = useState("");
-  const [skills,      setSkills]      = useState("");
+  const [skills,      setSkills]      = useState([]);  // array of tag strings
   const [error,       setError]       = useState("");
   const [loading,     setLoading]     = useState(false);
 
@@ -36,13 +37,13 @@ export default function RegisterPage() {
       const res  = await fetch(`${API}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, password, user_type: userType, project, designation, skills }),
+        body: JSON.stringify({ username, email, password, user_type: userType, project, designation, skills: skills.join(", ") }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
         localStorage.setItem("user", JSON.stringify({
           user_id: data.user_id, username, email,
-          user_type: userType, project, designation, skills,
+          user_type: userType, project, designation, skills: skills.join(", "),
         }));
         router.push("/dashboard");
       } else {
@@ -74,7 +75,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className={styles.heroPill}>⚡ AI-powered workforce intelligence</div>
+            <div className={styles.heroPill}>AI-powered workforce intelligence</div>
 
             <h1 className={styles.heroTitle}>
               Track every second of <span className={styles.heroAccent}>productivity.</span>
@@ -95,7 +96,7 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Full Name</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>👤</span>
+                  <span className={styles.inputIcon}>N</span>
                   <input type="text" className={styles.input} placeholder="Your name"
                     value={username} onChange={(e) => setUsername(e.target.value)}
                     autoComplete="name" disabled={loading} />
@@ -105,7 +106,7 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Email Address</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>✉</span>
+                  <span className={styles.inputIcon}>@</span>
                   <input type="email" className={styles.input} placeholder="you@example.com"
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email" disabled={loading} />
@@ -115,14 +116,14 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Password</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>🔒</span>
+                  <span className={styles.inputIcon}>#</span>
                   <input type={showPass ? "text" : "password"} className={styles.input}
                     placeholder="Min. 6 characters" value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoComplete="new-password" disabled={loading} />
                   <button type="button" className={styles.eyeBtn}
                     onClick={() => setShowPass(!showPass)} tabIndex={-1}>
-                    {showPass ? "🙈" : "👁"}
+                    {showPass ? "Hide" : "Show"}
                   </button>
                 </div>
               </div>
@@ -130,7 +131,7 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Account Type</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>🛡</span>
+                  <span className={styles.inputIcon}>R</span>
                   <select className={styles.input} value={userType}
                     onChange={(e) => setUserType(e.target.value)} disabled={loading}>
                     <option value="user">Employee (User)</option>
@@ -142,7 +143,7 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Project</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>🌐</span>
+                  <span className={styles.inputIcon}>P</span>
                   <select className={styles.input} value={project}
                     onChange={(e) => setProject(e.target.value)} disabled={loading}>
                     <option value="">Select project...</option>
@@ -155,7 +156,7 @@ export default function RegisterPage() {
               <div className={styles.fieldGroup}>
                 <label className={styles.label}>Designation</label>
                 <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>💼</span>
+                  <span className={styles.inputIcon}>D</span>
                   <input type="text" className={styles.input}
                     placeholder="e.g. Frontend Dev, Marketing"
                     value={designation} onChange={(e) => setDesignation(e.target.value)}
@@ -164,20 +165,14 @@ export default function RegisterPage() {
               </div>
 
               <div className={styles.fieldGroup}>
-                <label className={styles.label}>Skills</label>
-                <div className={styles.inputWrap}>
-                  <span className={styles.inputIcon}>⚡</span>
-                  <input type="text" className={styles.input}
-                    placeholder="e.g. Python, React, UI/UX"
-                    value={skills} onChange={(e) => setSkills(e.target.value)}
-                    disabled={loading} />
-                </div>
+                <label className={styles.label}>Skills <span style={{ color: "#94A3B8", fontWeight: 400, fontSize: 11 }}>(type then press Enter, comma, or space)</span></label>
+                <TagInput tags={skills} onChange={setSkills} placeholder="e.g. React, Node, UI/UX" disabled={loading} />
               </div>
 
-              {error && <div className={styles.errorBox}><span>⚠ {error}</span></div>}
+              {error && <div className={styles.errorBox}><span>{error}</span></div>}
 
               <button type="submit" className={styles.loginBtn} disabled={loading}>
-                {loading ? (<><span className={styles.spinner} /> Creating...</>) : "Create Account →"}
+                {loading ? (<><span className={styles.spinner} /> Creating...</>) : "Create account"}
               </button>
             </form>
 

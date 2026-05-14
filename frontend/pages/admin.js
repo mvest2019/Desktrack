@@ -141,12 +141,12 @@ export default function AdminPortal() {
             <span className={styles.logoText}>Realisieren Pulse</span>
           </div>
           <nav className={styles.nav}>
-            <Link className={styles.navItem} href="/dashboard"><span>📊</span> Dashboard</Link>
-            <Link className={styles.navItem} href="/screenshots"><span>📷</span> Screenshots</Link>
-            <Link className={styles.navItem} href="/activity"><span>🖥</span> Activity</Link>
-            <Link className={styles.navItem} href="/tasks"><span>✅</span> My Tasks</Link>
-            <Link className={`${styles.navItem} ${styles.active}`} href="/admin"><span>🛡</span> Admin Portal</Link>
-            <Link className={styles.navItem} href="/admin-tasks"><span>📋</span> Task Overview</Link>
+            <Link className={styles.navItem} href="/dashboard"><span>DB</span> Dashboard</Link>
+            <Link className={styles.navItem} href="/screenshots"><span>SC</span> Screenshots</Link>
+            <Link className={styles.navItem} href="/activity"><span>AC</span> Activity</Link>
+            <Link className={styles.navItem} href="/tasks"><span>TK</span> My Tasks</Link>
+            <Link className={`${styles.navItem} ${styles.active}`} href="/admin"><span>AD</span> Admin Portal</Link>
+            <Link className={styles.navItem} href="/admin-tasks"><span>OV</span> Task Overview</Link>
           </nav>
           <div className={styles.sidebarFooter}>
             <div className={styles.userBadge}>

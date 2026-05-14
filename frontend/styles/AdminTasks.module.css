@@ -81,3 +81,14 @@
 
 /* Loading */
 .loading   { text-align: center; padding: 40px; color: #94A3B8; font-size: 13px; }
+
+/* Task cards (compact, title + status only) */
+.taskCards    { display: flex; flex-direction: column; gap: 0; }
+.taskCard     { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #F1F5F9; transition: background 0.1s; }
+.taskCard:last-child { border-bottom: none; }
+.taskCard:hover { background: #F8FAFC; }
+.taskCardLeft  { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; margin-right: 20px; }
+.taskCardRight { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.taskTitle    { font-size: 14px; font-weight: 500; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
+.taskTime     { font-size: 11px; color: #94A3B8; }
+.projectBadge { background: #F5F3FF; color: #7C3AED; padding: 2px 8px; border-radius: 20px; font-size: 11px; margin-left: 6px; }
