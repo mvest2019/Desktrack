@@ -25,6 +25,7 @@ export default function ProfilePage() {
   const [editDesignation, setEditDesignation] = useState("");
   const [editProject, setEditProject]         = useState("");
   const [editSkills, setEditSkills]           = useState([]);  // string[] for TagInput
+  const [editBio, setEditBio]                 = useState("");
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -58,6 +59,7 @@ export default function ProfilePage() {
     setEditUsername(profile?.username || "");
     setEditDesignation(profile?.designation || "");
     setEditProject(profile?.project || "");
+    setEditBio(profile?.bio || "");
     setEditSkills(
       profile?.skills
         ? profile.skills.split(",").map(s => s.trim()).filter(Boolean)
@@ -86,8 +88,9 @@ export default function ProfilePage() {
         body: JSON.stringify({
           username: editUsername.trim(),
           designation: editDesignation.trim() || null,
-          project: editProject || null,
+          project: editProject || "",
           skills: editSkills.length ? editSkills.join(", ") : null,
+          bio: editBio.trim() || null,
         }),
       });
       const data = await res.json();
@@ -218,6 +221,14 @@ export default function ProfilePage() {
 
                   <div className={styles.profileDivider} />
 
+                  {/* ── Bio ───────────────────────────────── */}
+                  {profile.bio && (
+                    <div style={{ margin: "0 36px 4px" }}>
+                      <p className={styles.sectionLabel} style={{ marginBottom: 6 }}>About</p>
+                      <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.6, margin: 0 }}>{profile.bio}</p>
+                    </div>
+                  )}
+
                   {/* ── 3-column info sections ─────────── */}
                   <div className={styles.sectionsGrid}>
                     <div className={styles.profileSection}>
@@ -334,6 +345,21 @@ export default function ProfilePage() {
                           Skills <span style={{ color: "#94A3B8", fontWeight: 400, fontSize: 11 }}>(Enter, comma, or space to add)</span>
                         </label>
                         <TagInput tags={editSkills} onChange={setEditSkills} placeholder="e.g. Python, React, UI/UX" disabled={loading} />
+                      </div>
+
+                      <div className={styles.formField} style={{ marginTop: 4 }}>
+                        <label className={styles.formLabel}>
+                          Bio <span style={{ color: "#94A3B8", fontWeight: 400, fontSize: 11 }}>(optional)</span>
+                        </label>
+                        <textarea
+                          className={styles.formInput}
+                          rows={3}
+                          placeholder="e.g. Backend Developer working on productivity tools and workforce analytics."
+                          value={editBio}
+                          onChange={e => setEditBio(e.target.value)}
+                          disabled={loading}
+                          style={{ resize: "vertical", fontFamily: "inherit", fontSize: 13, lineHeight: 1.5 }}
+                        />
                       </div>
 
                       {errorMsg   && <div className={styles.errorMsg}>{errorMsg}</div>}

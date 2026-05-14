@@ -133,14 +133,16 @@ class UserProfileResponse(BaseModel):
     project:     Optional[str]
     designation: Optional[str]
     skills:      Optional[str]
+    bio:         Optional[str]
     isactive:    bool
     created_at:  str
 
 class UserProfileUpdateRequest(BaseModel):
     username:    Optional[str] = None
     designation: Optional[str] = None
-    project:     Optional[str] = None  # "Bold" or "MView"
+    project:     Optional[str] = None  # "Bold", "MView", or "" to clear
     skills:      Optional[str] = None
+    bio:         Optional[str] = None
 
 
 # ── Admin schemas ────────────────────────────────────────────

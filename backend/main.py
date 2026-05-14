@@ -649,6 +649,7 @@ def get_profile(user_id: int, db: Session = Depends(get_db)):
         project=user.project,
         designation=user.designation,
         skills=user.skills,
+        bio=user.bio,
         isactive=user.isactive,
         created_at=user.created_at.isoformat(),
     )
@@ -656,21 +657,26 @@ def get_profile(user_id: int, db: Session = Depends(get_db)):
 
 @app.patch("/api/users/{user_id}/profile", response_model=UserProfileResponse, tags=["Profile"])
 def update_profile(user_id: int, request: UserProfileUpdateRequest, db: Session = Depends(get_db)):
-    """Update username, designation, project, or skills for a user."""
+    """Update username, designation, project, skills, or bio for a user."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     if request.username is not None:
-        user.username = request.username
+        user.username = request.username.strip() or user.username
     if request.designation is not None:
-        user.designation = request.designation
+        user.designation = request.designation.strip() or None
     if request.project is not None:
-        if request.project not in ("Bold", "MView"):
-            raise HTTPException(status_code=400, detail="project must be 'Bold' or 'MView'")
-        user.project = request.project
+        if request.project == "":
+            user.project = None
+        elif request.project in ("Bold", "MView"):
+            user.project = request.project
+        else:
+            raise HTTPException(status_code=400, detail="project must be 'Bold', 'MView', or empty to clear")
     if request.skills is not None:
-        user.skills = request.skills
+        user.skills = request.skills.strip() or None
+    if request.bio is not None:
+        user.bio = request.bio.strip() or None
 
     db.commit()
     db.refresh(user)
@@ -683,6 +689,7 @@ def update_profile(user_id: int, request: UserProfileUpdateRequest, db: Session 
         project=user.project,
         designation=user.designation,
         skills=user.skills,
+        bio=user.bio,
         isactive=user.isactive,
         created_at=user.created_at.isoformat(),
     )
