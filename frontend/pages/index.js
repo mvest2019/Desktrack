@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import styles from "../styles/Login.module.css";
+import Link from "next/link";
 import API from "../config";
 
 export default function LoginPage() {
@@ -147,6 +148,12 @@ export default function LoginPage() {
                     {showPass ? "Hide" : "Show"}
                   </button>
                 </div>
+              </div>
+
+              <div style={{ textAlign: "right", marginTop: -8, marginBottom: 4 }}>
+                <Link href="/forgot-password" style={{ fontSize: 13, color: "#4F63D2", textDecoration: "none" }}>
+                  Forgot Password?
+                </Link>
               </div>
 
               {error && <div className={styles.errorBox}><span>{error}</span></div>}

@@ -14,11 +14,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import bcrypt
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 import base64
 import shutil
+import random
+import string
+import smtplib
+from email.mime.text import MIMEText
 from pathlib import Path
 
 logging.basicConfig(
@@ -29,7 +33,7 @@ log = logging.getLogger("ai_assistant")
 
 # PostgreSQL
 from database import get_db, engine
-from models import Base, User, ActivityLog, AppLog, Task, TaskNote
+from models import Base, User, ActivityLog, AppLog, Task, TaskNote, PasswordResetToken
 
 # MongoDB
 from mongo import get_raw_samples
@@ -49,6 +53,8 @@ from schemas import (
     TaskNoteCreateRequest, TaskNoteItem, TaskItem,
     TaskListResponse, TaskSummaryResponse,
     AdminTaskItem, AdminTaskListResponse, AdminTaskStatsResponse, AdminTaskUserStat,
+    PasswordResetRequestRequest, PasswordResetRequestResponse,
+    PasswordResetConfirmRequest, PasswordResetConfirmResponse,
 )
 
 # Auto-create PostgreSQL tables on startup
@@ -195,6 +201,84 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         skills=user.skills,
         message="Login successful",
     )
+
+
+# ══════════════════════════════════════════════════════════
+# PASSWORD RESET
+# ══════════════════════════════════════════════════════════
+
+def _send_reset_email(to_email: str, otp: str):
+    """Send OTP via SMTP if configured, otherwise just log it."""
+    host = os.getenv("SMTP_HOST", "")
+    port = int(os.getenv("SMTP_PORT", "587"))
+    user = os.getenv("SMTP_USER", "")
+    pw   = os.getenv("SMTP_PASS", "")
+    frm  = os.getenv("SMTP_FROM", user)
+    if not host or not user:
+        log.info("📧 [NO SMTP] Password reset OTP for %s: %s", to_email, otp)
+        return
+    try:
+        msg = MIMEText(
+            f"Your Realisieren Pulse password reset code is:\n\n"
+            f"  {otp}\n\n"
+            f"This code expires in 15 minutes. If you did not request this, ignore this email.",
+            "plain"
+        )
+        msg["Subject"] = "Realisieren Pulse — Password Reset Code"
+        msg["From"]    = frm
+        msg["To"]      = to_email
+        with smtplib.SMTP(host, port, timeout=10) as server:
+            server.starttls()
+            server.login(user, pw)
+            server.sendmail(frm, [to_email], msg.as_string())
+        log.info("📧 Reset OTP sent to %s", to_email)
+    except Exception as exc:
+        log.warning("📧 Email send failed (%s) — OTP for %s: %s", exc, to_email, otp)
+
+
+@app.post("/api/password-reset/request", response_model=PasswordResetRequestResponse, tags=["Auth — PostgreSQL"])
+def request_password_reset(request: PasswordResetRequestRequest, db: Session = Depends(get_db)):
+    """Generate a 6-digit OTP and send it to the user's email."""
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        return PasswordResetRequestResponse(success=True, message="If that email is registered, a reset code has been sent.")
+
+    otp = "".join(random.choices(string.digits, k=6))
+    expires_at = datetime.utcnow() + timedelta(minutes=15)
+
+    db.query(PasswordResetToken).filter(PasswordResetToken.email == request.email).delete()
+    db.add(PasswordResetToken(email=request.email, token=otp, expires_at=expires_at))
+    db.commit()
+
+    _send_reset_email(request.email, otp)
+    return PasswordResetRequestResponse(success=True, message="Reset code sent. Check your email.")
+
+
+@app.post("/api/password-reset/confirm", response_model=PasswordResetConfirmResponse, tags=["Auth — PostgreSQL"])
+def confirm_password_reset(request: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
+    """Validate OTP and set a new password."""
+    if len(request.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+
+    reset = db.query(PasswordResetToken).filter(
+        PasswordResetToken.email == request.email,
+        PasswordResetToken.token == request.token,
+        PasswordResetToken.used  == False,
+    ).first()
+
+    if not reset or reset.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired reset code.")
+
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    user.password = bcrypt.hashpw(request.new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    reset.used = True
+    db.commit()
+
+    log.info("🔑 Password reset successful for %s", request.email)
+    return PasswordResetConfirmResponse(success=True, message="Password updated. You can now sign in.")
 
 
 # ══════════════════════════════════════════════════════════

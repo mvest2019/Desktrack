@@ -43,8 +43,7 @@ export default function ProfilePage() {
         const data = await res.json();
         setProfile(data);
       } else if (res.status === 404) {
-        localStorage.removeItem("user");
-        router.replace("/?reason=account_not_found");
+        setProfileError("Profile not found. Please sign out and back in, or contact your admin.");
       } else {
         setProfileError(`Server error ${res.status}. Your session may be stale — try signing out and back in.`);
       }

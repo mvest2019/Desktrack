@@ -1115,6 +1115,15 @@ class DashboardWindow(ctk.CTkToplevel):
 
         threading.Thread(target=self._load_profile_stats, daemon=True).start()
 
+        # ── Open Website button ──────────────────────────
+        ctk.CTkButton(
+            inner, text="🌐  Open Website", height=40,
+            fg_color="#EEF2FF", border_width=1, border_color="#C7D2FE",
+            text_color="#4F63D2", hover_color="#E0E7FF",
+            font=ctk.CTkFont(family=_UI_FONT, size=13),
+            command=self._open_website,
+        ).pack(fill="x", pady=(4, 2))
+
         # ── Logout button ────────────────────────────────
         ctk.CTkButton(
             inner, text="🚪  Logout & Stop Capture", height=44,
@@ -1122,7 +1131,7 @@ class DashboardWindow(ctk.CTkToplevel):
             text_color="#EF4444", hover_color="#FEE2E2",
             font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
             command=self._logout,
-        ).pack(fill="x", pady=(4, 8))
+        ).pack(fill="x", pady=(2, 8))
 
     def _card(self, parent, padx=0, children_fn=None):
         """Helper to create a consistent card frame"""
@@ -1186,7 +1195,7 @@ class DashboardWindow(ctk.CTkToplevel):
                 self.after(0, lambda t=tasks: self._render_task_list(t))
                 return
             if res.status_code == 404:
-                self.after(0, self._handle_invalid_session)
+                self.after(0, lambda: self._render_task_list([]))
                 return
             self.after(0, lambda c=res.status_code: self._show_tasks_error(c))
         except requests.exceptions.ConnectionError:
@@ -1332,9 +1341,6 @@ class DashboardWindow(ctk.CTkToplevel):
         # ── Profile data (same API as website) ───────────
         try:
             prof = requests.get(f"{API_URL}/api/users/{self.user_id}/profile", timeout=8)
-            if prof.status_code == 404:
-                self.after(0, self._handle_invalid_session)
-                return
             if prof.status_code == 200:
                 d = prof.json()
                 self.after(0, lambda: self._proj_var.set(d.get("project") or "—"))
@@ -1470,6 +1476,12 @@ class DashboardWindow(ctk.CTkToplevel):
         if not self.is_capturing:
             return
         self.after(5000, self._poll_activity_status)
+
+    # ── Open website in browser ───────────────────────────
+    def _open_website(self):
+        import webbrowser
+        from config import STAGING_WEBSITE_URL
+        webbrowser.open(STAGING_WEBSITE_URL)
 
     # ── Logout & close ────────────────────────────────────
     def _logout(self):

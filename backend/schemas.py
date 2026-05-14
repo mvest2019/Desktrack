@@ -272,3 +272,19 @@ class AdminTaskStatsResponse(BaseModel):
     pending:        int
     completion_pct: float
     by_employee:    List[AdminTaskUserStat]
+
+class PasswordResetRequestRequest(BaseModel):
+    email: str
+
+class PasswordResetRequestResponse(BaseModel):
+    success: bool
+    message: str
+
+class PasswordResetConfirmRequest(BaseModel):
+    email:        str
+    token:        str
+    new_password: str
+
+class PasswordResetConfirmResponse(BaseModel):
+    success: bool
+    message: str

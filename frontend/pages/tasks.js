@@ -102,11 +102,9 @@ export default function TasksPage() {
       if (tasksRes.ok) {
         setTasks((await tasksRes.json()).tasks || []);
       } else if (tasksRes.status === 404) {
-        localStorage.removeItem("user");
-        router.replace("/?reason=account_not_found");
-        return;
+        setTasks([]);
       } else {
-        setFetchError(`Server error ${tasksRes.status}. Your session may be stale — try signing out and back in.`);
+        setFetchError(`Server error ${tasksRes.status}. Please try again or sign out and back in.`);
       }
       if (sumRes.ok) setSummary(await sumRes.json());
     } catch { setFetchError("Cannot connect to server. Make sure the backend is reachable."); }
