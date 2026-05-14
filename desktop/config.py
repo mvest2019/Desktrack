@@ -28,7 +28,7 @@ else:
 
 # ── Defaults ────────────────────────────────────────────────
 STAGING_API_URL     = "http://69.62.76.202:8000"  # production server
-STAGING_WEBSITE_URL = "http://69.62.76.202:3000"   # production website
+STAGING_WEBSITE_URL = "https://desktrack-five.vercel.app"  # production website
 SCREENSHOT_INTERVAL = 180                          # seconds (3 minutes)
 
 

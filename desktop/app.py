@@ -250,8 +250,15 @@ class LoginWindow(ctk.CTk):
         )
         self.login_btn.pack(fill="x", pady=(12, 0))
 
+        ctk.CTkButton(
+            self._login_frame, text="Forgot Password?",
+            font=ctk.CTkFont(size=12), text_color="#4F63D2",
+            fg_color="transparent", hover_color="#EEF2FF",
+            border_width=0, height=22, command=self._show_forgot_password,
+        ).pack(pady=(6, 0))
+
         foot1 = ctk.CTkFrame(self._login_frame, fg_color="transparent")
-        foot1.pack(pady=(10, 0))
+        foot1.pack(pady=(4, 0))
         ctk.CTkLabel(foot1, text="Don't have an account? ",
                      font=ctk.CTkFont(size=12), text_color="#64748B").pack(side="left")
         ctk.CTkButton(foot1, text="Create one",
@@ -290,10 +297,6 @@ class LoginWindow(ctk.CTk):
         self.reg_pass_var = tk.StringVar()
         self._make_field_row(reg_scroll, "🔒", self.reg_pass_var, "Min 6 characters", show="•")
 
-        ctk.CTkLabel(reg_scroll, text="You can add Project, Designation and Skills from your Profile after sign-in.",
-                     font=ctk.CTkFont(size=11), text_color="#94A3B8",
-                     wraplength=320).pack(pady=(10, 0))
-
         self.reg_error_var = tk.StringVar(value="")
         ctk.CTkLabel(reg_scroll, textvariable=self.reg_error_var,
                      text_color="#DC2626", font=ctk.CTkFont(size=12),
@@ -317,6 +320,94 @@ class LoginWindow(ctk.CTk):
                       hover_color="#EEF2FF", border_width=0, height=22,
                       width=50, command=self._show_login).pack(side="left")
 
+        # ── Forgot Password frame (hidden initially) ──────
+        self._forgot_frame = ctk.CTkFrame(self, fg_color="transparent")
+
+        ctk.CTkLabel(self._forgot_frame, text="Reset your password",
+                     font=ctk.CTkFont(size=13),
+                     text_color="#64748B").pack(pady=(4, 12), padx=44)
+
+        fp_inner = ctk.CTkFrame(self._forgot_frame, fg_color="transparent")
+        fp_inner.pack(fill="both", expand=True, padx=44)
+
+        # Step 1 — email entry
+        self._fp_email_frame = ctk.CTkFrame(fp_inner, fg_color="transparent")
+        self._fp_email_frame.pack(fill="both", expand=True)
+
+        ctk.CTkLabel(self._fp_email_frame, text="Email Address", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x")
+        self._fp_email_var = tk.StringVar()
+        self._make_field_row(self._fp_email_frame, "✉", self._fp_email_var, "you@example.com")
+        self._fp_req_error = tk.StringVar(value="")
+        ctk.CTkLabel(self._fp_email_frame, textvariable=self._fp_req_error,
+                     text_color="#DC2626", font=ctk.CTkFont(size=12),
+                     wraplength=360).pack(pady=(8, 0))
+        self._fp_req_btn = ctk.CTkButton(
+            self._fp_email_frame, text="Send OTP  →", height=50,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#4F63D2", hover_color="#4050C0",
+            corner_radius=12, command=self._on_forgot_request_click,
+        )
+        self._fp_req_btn.pack(fill="x", pady=(12, 0))
+
+        # Step 2 — OTP + new password (hidden initially)
+        self._fp_otp_frame = ctk.CTkFrame(fp_inner, fg_color="transparent")
+
+        ctk.CTkLabel(self._fp_otp_frame,
+                     text="Enter the 6-digit OTP sent to your email.",
+                     font=ctk.CTkFont(size=12), text_color="#64748B",
+                     wraplength=360).pack(pady=(0, 8))
+        ctk.CTkLabel(self._fp_otp_frame, text="OTP Code", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x")
+        self._fp_otp_var = tk.StringVar()
+        self._make_field_row(self._fp_otp_frame, "🔢", self._fp_otp_var, "6-digit code")
+        ctk.CTkLabel(self._fp_otp_frame, text="New Password", anchor="w",
+                     font=ctk.CTkFont(size=12, weight="bold"),
+                     text_color="#475569").pack(fill="x", pady=(12, 0))
+        self._fp_newpass_var = tk.StringVar()
+        self._make_field_row(self._fp_otp_frame, "🔒", self._fp_newpass_var,
+                             "Min 6 characters", show="•")
+        self._fp_conf_error = tk.StringVar(value="")
+        ctk.CTkLabel(self._fp_otp_frame, textvariable=self._fp_conf_error,
+                     text_color="#DC2626", font=ctk.CTkFont(size=12),
+                     wraplength=360).pack(pady=(8, 0))
+        self._fp_conf_btn = ctk.CTkButton(
+            self._fp_otp_frame, text="Reset Password  →", height=50,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#4F63D2", hover_color="#4050C0",
+            corner_radius=12, command=self._on_forgot_confirm_click,
+        )
+        self._fp_conf_btn.pack(fill="x", pady=(12, 0))
+
+        # Step 3 — done (hidden initially)
+        self._fp_done_frame = ctk.CTkFrame(fp_inner, fg_color="transparent")
+
+        ctk.CTkLabel(self._fp_done_frame, text="✓  Password reset successfully!",
+                     font=ctk.CTkFont(size=15, weight="bold"),
+                     text_color="#16A34A").pack(pady=(20, 8))
+        ctk.CTkLabel(self._fp_done_frame,
+                     text="You can now sign in with your new password.",
+                     font=ctk.CTkFont(size=12), text_color="#64748B").pack()
+        ctk.CTkButton(
+            self._fp_done_frame, text="Back to Sign In  →", height=50,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#4F63D2", hover_color="#4050C0",
+            corner_radius=12, command=self._show_login,
+        ).pack(fill="x", pady=(20, 0))
+
+        # Back to sign in link (always visible inside forgot frame)
+        fp_foot = ctk.CTkFrame(self._forgot_frame, fg_color="transparent")
+        fp_foot.pack(pady=(10, 0))
+        ctk.CTkLabel(fp_foot, text="Remember your password? ",
+                     font=ctk.CTkFont(size=12), text_color="#64748B").pack(side="left")
+        ctk.CTkButton(fp_foot, text="Sign in",
+                      font=ctk.CTkFont(size=12, weight="bold"),
+                      text_color="#4F63D2", fg_color="transparent",
+                      hover_color="#EEF2FF", border_width=0, height=22,
+                      width=50, command=self._show_login).pack(side="left")
+
         self.bind("<Return>", lambda _: self._on_login_click())
         self.email_entry.focus()
 
@@ -333,6 +424,7 @@ class LoginWindow(ctk.CTk):
 
     def _show_login(self):
         self._reg_frame.pack_forget()
+        self._forgot_frame.pack_forget()
         self._login_frame.pack(fill="both", expand=True, padx=44)
         self.error_var.set("")
         self.login_btn.configure(text="Sign In  →", state="normal")
@@ -450,7 +542,116 @@ class LoginWindow(ctk.CTk):
         self.reg_error_var.set(msg)
         self.reg_btn.configure(text="Create Account  →", state="normal", fg_color="#4F63D2")
 
+    # ── Forgot Password ───────────────────────────────────
+    def _show_forgot_password(self):
+        self._login_frame.pack_forget()
+        self._reg_frame.pack_forget()
+        self._fp_otp_frame.pack_forget()
+        self._fp_done_frame.pack_forget()
+        self._fp_email_frame.pack(fill="both", expand=True)
+        self._fp_email_var.set("")
+        self._fp_req_error.set("")
+        self._fp_req_btn.configure(text="Send OTP  →", state="normal", fg_color="#4F63D2")
+        self._forgot_frame.pack(fill="both", expand=True)
+        self.unbind("<Return>")
+        self.bind("<Return>", lambda _: self._on_forgot_request_click())
 
+    def _on_forgot_request_click(self):
+        email = self._fp_email_var.get().strip()
+        if not email:
+            self._fp_req_error.set("⚠  Please enter your email address.")
+            return
+        self._fp_req_btn.configure(text="Sending...", state="disabled")
+        self._fp_req_error.set("")
+        threading.Thread(target=self._do_forgot_request, args=(email,), daemon=True).start()
+
+    def _do_forgot_request(self, email: str):
+        try:
+            res = requests.post(
+                f"{API_URL}/api/password-reset/request",
+                json={"email": email},
+                timeout=10,
+            )
+            data = res.json()
+            if res.ok and data.get("success"):
+                self.after(0, self._show_forgot_otp_step)
+            else:
+                msg = data.get("message", "Failed to send OTP.")
+                self.after(0, lambda: (
+                    self._fp_req_error.set(f"⚠  {msg}"),
+                    self._fp_req_btn.configure(text="Send OTP  →", state="normal"),
+                ))
+        except requests.exceptions.ConnectionError:
+            self.after(0, lambda: (
+                self._fp_req_error.set("⚠  Cannot connect to server."),
+                self._fp_req_btn.configure(text="Send OTP  →", state="normal"),
+            ))
+        except Exception as e:
+            self.after(0, lambda: (
+                self._fp_req_error.set(f"⚠  Error: {e}"),
+                self._fp_req_btn.configure(text="Send OTP  →", state="normal"),
+            ))
+
+    def _show_forgot_otp_step(self):
+        self._fp_email_frame.pack_forget()
+        self._fp_otp_var.set("")
+        self._fp_newpass_var.set("")
+        self._fp_conf_error.set("")
+        self._fp_conf_btn.configure(text="Reset Password  →", state="normal", fg_color="#4F63D2")
+        self._fp_otp_frame.pack(fill="both", expand=True)
+        self.unbind("<Return>")
+        self.bind("<Return>", lambda _: self._on_forgot_confirm_click())
+
+    def _on_forgot_confirm_click(self):
+        otp = self._fp_otp_var.get().strip()
+        new_pass = self._fp_newpass_var.get().strip()
+        if not otp or len(otp) != 6 or not otp.isdigit():
+            self._fp_conf_error.set("⚠  Enter the 6-digit OTP from your email.")
+            return
+        if len(new_pass) < 6:
+            self._fp_conf_error.set("⚠  Password must be at least 6 characters.")
+            return
+        self._fp_conf_btn.configure(text="Resetting...", state="disabled")
+        self._fp_conf_error.set("")
+        email = self._fp_email_var.get().strip()
+        threading.Thread(
+            target=self._do_forgot_confirm,
+            args=(email, otp, new_pass),
+            daemon=True,
+        ).start()
+
+    def _do_forgot_confirm(self, email: str, otp: str, new_pass: str):
+        try:
+            res = requests.post(
+                f"{API_URL}/api/password-reset/confirm",
+                json={"email": email, "token": otp, "new_password": new_pass},
+                timeout=10,
+            )
+            data = res.json()
+            if res.ok and data.get("success"):
+                self.after(0, self._show_forgot_done)
+            else:
+                msg = data.get("message", "Password reset failed.")
+                self.after(0, lambda: (
+                    self._fp_conf_error.set(f"⚠  {msg}"),
+                    self._fp_conf_btn.configure(text="Reset Password  →", state="normal"),
+                ))
+        except requests.exceptions.ConnectionError:
+            self.after(0, lambda: (
+                self._fp_conf_error.set("⚠  Cannot connect to server."),
+                self._fp_conf_btn.configure(text="Reset Password  →", state="normal"),
+            ))
+        except Exception as e:
+            self.after(0, lambda: (
+                self._fp_conf_error.set(f"⚠  Error: {e}"),
+                self._fp_conf_btn.configure(text="Reset Password  →", state="normal"),
+            ))
+
+    def _show_forgot_done(self):
+        self._fp_otp_frame.pack_forget()
+        self._fp_done_frame.pack(fill="both", expand=True)
+        self.unbind("<Return>")
+        self.bind("<Return>", lambda _: self._show_login())
 
 
 
@@ -1007,11 +1208,6 @@ class DashboardWindow(ctk.CTkToplevel):
         )
         self.status_text.pack(side="left")
 
-        self._screenshots_var = tk.StringVar(value="0 screenshots uploaded")
-        ctk.CTkLabel(track_card, textvariable=self._screenshots_var,
-                     font=ctk.CTkFont(family=_UI_FONT, size=11),
-                     text_color="#64748B").pack(padx=14, pady=(0, 12), anchor="w")
-
         # ══ PROFILE CARD ═════════════════════════════════
         prof_card = self._card(inner)
         prof_hdr = ctk.CTkFrame(prof_card, fg_color="transparent")
@@ -1025,6 +1221,9 @@ class DashboardWindow(ctk.CTkToplevel):
                      text_color="#0F172A").pack(side="left")
 
         # Avatar + identity
+        self._name_var      = tk.StringVar(value=self.username)
+        self._email_lbl_var = tk.StringVar(value=self.user_data.get("email", ""))
+
         av_row = ctk.CTkFrame(prof_card, fg_color="transparent")
         av_row.pack(fill="x", padx=14, pady=(0, 10))
         initials = "".join(w[0].upper() for w in self.username.split()[:2]) or "U"
@@ -1036,23 +1235,25 @@ class DashboardWindow(ctk.CTkToplevel):
                      text_color="#4F63D2").place(relx=0.5, rely=0.5, anchor="center")
         name_col = ctk.CTkFrame(av_row, fg_color="transparent")
         name_col.pack(side="left", fill="both", expand=True)
-        ctk.CTkLabel(name_col, text=self.username, anchor="w",
+        ctk.CTkLabel(name_col, textvariable=self._name_var, anchor="w",
                      font=ctk.CTkFont(family=_UI_FONT, size=13, weight="bold"),
                      text_color="#0F172A").pack(anchor="w")
-        ctk.CTkLabel(name_col, text=self.user_data.get("email", ""), anchor="w",
+        ctk.CTkLabel(name_col, textvariable=self._email_lbl_var, anchor="w",
                      font=ctk.CTkFont(family=_UI_FONT, size=11),
                      text_color="#64748B").pack(anchor="w")
 
         # Stats grid (2-column)
         role_label = self.user_data.get("user_type", "user").replace("user", "Employee").replace("admin", "Admin")
-        self._role_var  = tk.StringVar(value=role_label)
-        self._proj_var  = tk.StringVar(value=self.user_data.get("project") or "—")
-        self._desig_var = tk.StringVar(value=self.user_data.get("designation") or "—")
-        self._hours_var = tk.StringVar(value="Loading…")
-        self._today_var = tk.StringVar(value="Loading…")
+        self._role_var   = tk.StringVar(value=role_label)
+        self._proj_var   = tk.StringVar(value=self.user_data.get("project") or "—")
+        self._desig_var  = tk.StringVar(value=self.user_data.get("designation") or "—")
+        self._skills_var = tk.StringVar(value=self.user_data.get("skills") or "—")
+        self._hours_var  = tk.StringVar(value="Loading…")
+        self._today_var  = tk.StringVar(value="Loading…")
+        self._bio_var    = tk.StringVar(value="—")
 
         grid = ctk.CTkFrame(prof_card, fg_color="transparent")
-        grid.pack(fill="x", padx=14, pady=(0, 14))
+        grid.pack(fill="x", padx=14, pady=(0, 6))
         grid.columnconfigure(0, weight=1)
         grid.columnconfigure(1, weight=1)
 
@@ -1074,6 +1275,19 @@ class DashboardWindow(ctk.CTkToplevel):
         stat_cell(grid, "Designation",   self._desig_var, 1, 0)
         stat_cell(grid, "Total Tracked", self._hours_var, 1, 1)
         stat_cell(grid, "Today Active",  self._today_var, 2, 0)
+        stat_cell(grid, "Skills",        self._skills_var, 2, 1)
+
+        # Bio row
+        bio_card = ctk.CTkFrame(prof_card, fg_color="#F8FAFC", corner_radius=10,
+                                border_color="#E2E8F0", border_width=1)
+        bio_card.pack(fill="x", padx=14, pady=(0, 14))
+        ctk.CTkLabel(bio_card, text="Bio",
+                     font=ctk.CTkFont(family=_UI_FONT, size=10),
+                     text_color="#94A3B8", anchor="w").pack(anchor="w", padx=10, pady=(7, 1))
+        ctk.CTkLabel(bio_card, textvariable=self._bio_var,
+                     font=ctk.CTkFont(family=_UI_FONT, size=12),
+                     text_color="#0F172A", anchor="w",
+                     wraplength=340, justify="left").pack(anchor="w", padx=10, pady=(0, 7))
 
         threading.Thread(target=self._load_profile_stats, daemon=True).start()
 
@@ -1309,6 +1523,10 @@ class DashboardWindow(ctk.CTkToplevel):
                 self.after(0, lambda: self._desig_var.set(d.get("designation") or "—"))
                 role = d.get("user_type", "user").replace("user", "Employee").replace("admin", "Admin")
                 self.after(0, lambda: self._role_var.set(role))
+                self.after(0, lambda: self._name_var.set(d.get("username") or self.username))
+                self.after(0, lambda: self._email_lbl_var.set(d.get("email") or ""))
+                self.after(0, lambda: self._skills_var.set(d.get("skills") or "—"))
+                self.after(0, lambda: self._bio_var.set(d.get("bio") or "—"))
         except Exception:
             pass
 
@@ -1425,13 +1643,7 @@ class DashboardWindow(ctk.CTkToplevel):
                 time.sleep(0.5)
 
     def _update_stats(self, _time_str: str, _size_kb: int):
-        try:
-            n = self.screenshot_count
-            self._screenshots_var.set(
-                f"{n} screenshot{'s' if n != 1 else ''} uploaded"
-            )
-        except Exception:
-            pass
+        pass
 
     def _poll_activity_status(self):
         """Periodic poll — kept for future use."""
