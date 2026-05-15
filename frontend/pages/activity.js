@@ -167,12 +167,13 @@ export default function ActivityPage() {
     return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
   }
 
-  // Format seconds as HH:MM for top-apps table
+  // Format seconds as HH:MM:SS for top-apps table
   function fmtHHMM(s) {
-    if (!s) return "0:00";
+    if (!s) return "0:00:00";
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
-    return `${h}:${String(m).padStart(2, "0")}`;
+    const sec = s % 60;
+    return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   }
 
   // App icon emoji mapping
@@ -212,7 +213,10 @@ export default function ActivityPage() {
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
             <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
-            <span className={styles.logoText}>Realisieren Pulse</span>
+            <div className={styles.logoTextWrap}>
+              <span className={styles.logoText}>Realisieren</span>
+              <span className={styles.logoText}>Pulse</span>
+            </div>
           </div>
 
           <nav className={styles.nav}>

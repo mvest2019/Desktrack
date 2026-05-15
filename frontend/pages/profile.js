@@ -150,7 +150,10 @@ export default function ProfilePage() {
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
             <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
-            <span className={styles.logoText}>Realisieren Pulse</span>
+            <div className={styles.logoTextWrap}>
+              <span className={styles.logoText}>Realisieren</span>
+              <span className={styles.logoText}>Pulse</span>
+            </div>
           </div>
 
           <nav className={styles.nav}>

@@ -192,14 +192,15 @@ export default function ForgotPasswordPage() {
             )}
 
             {step === "done" && (
-              <div style={{ textAlign: "center", padding: "24px 0" }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-                <h2 className={styles.formTitle} style={{ marginBottom: 8 }}>Password Updated!</h2>
-                <p className={styles.formSubtitle} style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "32px 0" }}>
+                <div style={{ fontSize: 52, marginBottom: 20 }}>✅</div>
+                <h2 className={styles.formTitle} style={{ marginBottom: 10 }}>Password Updated!</h2>
+                <p className={styles.formSubtitle} style={{ marginBottom: 32 }}>
                   Your password has been reset successfully. You can now sign in with your new password.
                 </p>
                 <button
                   className={styles.loginBtn}
+                  style={{ width: "100%" }}
                   onClick={() => router.push("/")}
                 >
                   Back to Sign In
