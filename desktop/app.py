@@ -576,7 +576,7 @@ class LoginWindow(ctk.CTk):
             if res.ok and data.get("success"):
                 self.after(0, self._show_forgot_otp_step)
             else:
-                msg = data.get("message", "Failed to send OTP.")
+                msg = data.get("detail") or data.get("message", "Failed to send OTP.")
                 self.after(0, lambda: (
                     self._fp_req_error.set(f"⚠  {msg}"),
                     self._fp_req_btn.configure(text="Send OTP  →", state="normal"),
@@ -631,7 +631,7 @@ class LoginWindow(ctk.CTk):
             if res.ok and data.get("success"):
                 self.after(0, self._show_forgot_done)
             else:
-                msg = data.get("message", "Password reset failed.")
+                msg = data.get("detail") or data.get("message", "Password reset failed.")
                 self.after(0, lambda: (
                     self._fp_conf_error.set(f"⚠  {msg}"),
                     self._fp_conf_btn.configure(text="Reset Password  →", state="normal"),
@@ -1468,8 +1468,8 @@ class DashboardWindow(ctk.CTkToplevel):
                                corner_radius=10, border_color="#E2E8F0", border_width=1)
             row.pack(fill="x", pady=(0, 6))
 
-            # Priority stripe — no pack_propagate so it doesn't force a default height
-            stripe = ctk.CTkFrame(row, fg_color=pc, corner_radius=0, width=4)
+            # Plain tk.Frame for stripe — CTkFrame has 200px default height which bloats cards
+            stripe = tk.Frame(row, bg=pc, width=4)
             stripe.pack(side="left", fill="y")
 
             # Content body — fill="x" so height is driven by content, not parent
