@@ -979,14 +979,20 @@ def get_tasks(user_id: int, date: str = None, status: str = None, db: Session = 
 
 @app.get("/api/tasks/{user_id}/summary", response_model=TaskSummaryResponse, tags=["Tasks"])
 def get_task_summary(user_id: int, date: str = None, db: Session = Depends(get_db)):
-    """Return task counts and completion % for the dashboard widget."""
+    """Return task counts and completion %. Pass date=all for all-time counts."""
     from datetime import date as date_cls
-    try:
-        d = date_cls.fromisoformat(date) if date else date_cls.today()
-    except ValueError:
-        d = date_cls.today()
 
-    tasks = db.query(Task).filter(Task.user_id == user_id, Task.task_date == d).all()
+    if date == "all":
+        tasks = db.query(Task).filter(Task.user_id == user_id).all()
+        date_label = "all"
+    else:
+        try:
+            d = date_cls.fromisoformat(date) if date else date_cls.today()
+        except ValueError:
+            d = date_cls.today()
+        tasks = db.query(Task).filter(Task.user_id == user_id, Task.task_date == d).all()
+        date_label = d.isoformat()
+
     total       = len(tasks)
     pending     = sum(1 for t in tasks if t.status == "pending")
     in_progress = sum(1 for t in tasks if t.status == "in_progress")
@@ -994,7 +1000,7 @@ def get_task_summary(user_id: int, date: str = None, db: Session = Depends(get_d
     pct         = round((completed / total) * 100, 1) if total > 0 else 0.0
 
     return TaskSummaryResponse(
-        success=True, user_id=user_id, date=d.isoformat(),
+        success=True, user_id=user_id, date=date_label,
         total=total, pending=pending, in_progress=in_progress,
         completed=completed, completion_pct=pct,
     )

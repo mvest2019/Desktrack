@@ -67,7 +67,7 @@ export default function Dashboard() {
         fetch(`${API}/api/stats/${userId}`),
         fetch(`${API}/api/screenshots/${userId}?limit=8`),
         fetch(`${API}/api/activity/${userId}?limit=20`),
-        fetch(`${API}/api/tasks/${userId}/summary`),
+        fetch(`${API}/api/tasks/${userId}/summary?date=all`),
         fetch(`${API}/api/applogs/${userId}/summary`),
       ]);
       if (statsRes.ok) setStats(await statsRes.json());
@@ -98,10 +98,12 @@ export default function Dashboard() {
     ? [{ name: "Done", value: completed }, { name: "Active", value: in_progress }, { name: "Pending", value: pending }].filter(d => d.value > 0)
     : [{ name: "No tasks", value: 1 }];
 
+  // Stacked bar: active minutes + idle minutes per 10-min window
   const timelineData = logs.map(w => ({
     time: new Date(w.window_start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+    active: Math.round(w.active_seconds / 60),
+    idle: Math.round(w.idle_seconds / 60),
     pct: w.activity_percent,
-    fill: w.activity_percent >= 70 ? "#22C55E" : w.activity_percent >= 40 ? "#F97316" : "#EF4444",
   }));
 
   const totalAppSec = appSummary.reduce((s, e) => s + e.total_sec, 0) || 1;
@@ -118,7 +120,10 @@ export default function Dashboard() {
         <aside className={styles.sidebar}>
           <div className={styles.logo}>
             <img src="/app_icon.png" alt="Realisieren Pulse" className={styles.logoImg} />
-            <span className={styles.logoText}>Realisieren Pulse</span>
+            <div className={styles.logoTextWrap}>
+              <span className={styles.logoText}>Realisieren</span>
+              <span className={styles.logoText}>Pulse</span>
+            </div>
           </div>
           <nav className={styles.nav}>
             <Link className={`${styles.navItem} ${styles.active}`} href="/dashboard">
@@ -211,7 +216,7 @@ export default function Dashboard() {
             <KPICard
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>}
               label="Tasks Done" value={`${completed}/${total}`}
-              color="#16A34A" bg="#DCFCE7" sub={`${completion_pct.toFixed(0)}% complete`}
+              color="#16A34A" bg="#DCFCE7" sub={`${completion_pct.toFixed(0)}% all-time`}
             />
             <KPICard
               icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>}
@@ -271,23 +276,22 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Timeline chart */}
+            {/* Timeline chart — stacked bars: active + idle minutes per window */}
             <div className={`${styles.chartCard} ${styles.chartCardFlex}`}>
               <h3 className={styles.chartTitle}>Activity Timeline</h3>
-              <p className={styles.chartSub}>10-minute windows across today</p>
+              <p className={styles.chartSub}>Active vs Idle minutes per 10-min window</p>
               {mounted && timelineData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={185}>
-                  <BarChart data={timelineData} barSize={12} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+                  <BarChart data={timelineData} barSize={10} margin={{ top: 4, right: 8, left: -20, bottom: 4 }}>
                     <CartesianGrid vertical={false} stroke="#F1F5F9" />
                     <XAxis dataKey="time" tick={{ fontSize: 10, fill: "#94A3B8" }} interval="preserveStartEnd" axisLine={false} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#94A3B8" }} tickFormatter={v => `${v}%`} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: "#94A3B8" }} tickFormatter={v => `${v}m`} axisLine={false} tickLine={false} />
                     <Tooltip
-                      formatter={v => [`${v}%`, "Activity"]}
+                      formatter={(v, name) => [`${v} min`, name === "active" ? "Active" : "Idle"]}
                       contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #E2E8F0", boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}
                     />
-                    <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
-                      {timelineData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                    </Bar>
+                    <Bar dataKey="active" name="Active" stackId="a" fill="#4F63D2" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="idle"   name="Idle"   stackId="a" fill="#E2E8F0" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -297,9 +301,8 @@ export default function Dashboard() {
                 </div>
               )}
               <div className={styles.legendPillRow}>
-                <span className={styles.legendPill} style={{ background: "#DCFCE7", color: "#16A34A" }}>● Active ≥70%</span>
-                <span className={styles.legendPill} style={{ background: "#FEF9C3", color: "#B45309" }}>● Moderate 40–69%</span>
-                <span className={styles.legendPill} style={{ background: "#FEE2E2", color: "#DC2626" }}>● Idle &lt;40%</span>
+                <span className={styles.legendPill} style={{ background: "#EEF2FF", color: "#4F63D2" }}>● Active (minutes)</span>
+                <span className={styles.legendPill} style={{ background: "#F8FAFC", color: "#94A3B8" }}>● Idle (minutes)</span>
               </div>
             </div>
           </div>
@@ -307,10 +310,10 @@ export default function Dashboard() {
           {/* ── Charts row 2: Task Status + App Usage ──── */}
           <div className={styles.chartsRow}>
 
-            {/* Task status donut */}
+            {/* Task status donut — all-time */}
             <div className={styles.chartCard} style={{ width: 280, flexShrink: 0 }}>
               <h3 className={styles.chartTitle}>Task Status</h3>
-              <p className={styles.chartSub}>Today&apos;s breakdown</p>
+              <p className={styles.chartSub}>All-time breakdown</p>
               {mounted && (
                 <div className={styles.donutWrap}>
                   <ResponsiveContainer width="100%" height={200}>
