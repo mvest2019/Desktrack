@@ -92,9 +92,15 @@ class ActivityTracker:
 
         self._log(f"📊 Activity tracker started (window={WINDOW_SECONDS}s, idle threshold={IDLE_THRESHOLD}s)")
 
+    def flush(self):
+        """Force-flush the current window to the backend immediately (call on logout)."""
+        if self._user_id and (self._active_seconds + self._idle_seconds) > 0:
+            self._flush_window()
+
     def stop(self):
         """Call this on logout to clean up listeners."""
         self._running = False
+        self.flush()  # flush current window before stopping
         if self._mouse_listener:
             self._mouse_listener.stop()
         if self._keyboard_listener:
