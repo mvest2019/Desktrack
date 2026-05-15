@@ -1,11 +1,73 @@
 # schemas.py — screenshot_id is now the filename string (e.g. screenshot_1_20260507_174421.png)
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Optional
 from datetime import datetime
+import re
+
+# ── Shared validation helpers ─────────────────────────────────────────────────
+
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+_SPECIAL_CHARS = re.compile(r'[!@#$%^&*()\[\]{}\-_=+|\\;:\'",.<>?/`~]')
+_NAME_NUMBERS = re.compile(r'\d')
+_NAME_SPECIALS = re.compile(r'[^a-zA-Z\s]')
+
+
+def _check_email(v: str) -> str:
+    v = v.strip()
+    if not v:
+        raise ValueError("Email is required")
+    if " " in v:
+        raise ValueError("Spaces are not allowed in email")
+    if not _EMAIL_RE.match(v):
+        raise ValueError("Enter a valid email address (e.g. name@domain.com)")
+    return v.lower()
+
+
+def _check_password(v: str) -> str:
+    if not v:
+        raise ValueError("Password is required")
+    if " " in v:
+        raise ValueError("Spaces are not allowed in password")
+    if len(v) < 8:
+        raise ValueError("Password must be at least 8 characters")
+    if not re.search(r"[A-Z]", v):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not re.search(r"[a-z]", v):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not re.search(r"\d", v):
+        raise ValueError("Password must contain at least one number")
+    if not _SPECIAL_CHARS.search(v):
+        raise ValueError("Password must contain at least one special character (!@#$%^&* etc.)")
+    return v
+
+
+def _check_full_name(v: str) -> str:
+    v = v.strip()
+    if not v:
+        raise ValueError("Full name is required")
+    if _NAME_NUMBERS.search(v):
+        raise ValueError("Numbers are not allowed in name")
+    if _NAME_SPECIALS.search(v):
+        raise ValueError("Special characters are not allowed in name")
+    return v
+
 
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _check_email(v)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Password is required")
+        return v
+
 
 class LoginResponse(BaseModel):
     success: bool
@@ -26,6 +88,22 @@ class RegisterRequest(BaseModel):
     project: Optional[str] = None        # "Bold" or "MView"
     designation: Optional[str] = None    # e.g. "Frontend Dev", "Marketing"
     skills: Optional[str] = None         # comma-separated, e.g. "Python, React"
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        return _check_full_name(v)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _check_email(v)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        return _check_password(v)
+
 
 class RegisterResponse(BaseModel):
     success: bool
@@ -278,6 +356,12 @@ class AdminTaskStatsResponse(BaseModel):
 class PasswordResetRequestRequest(BaseModel):
     email: str
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _check_email(v)
+
+
 class PasswordResetRequestResponse(BaseModel):
     success: bool
     message: str
@@ -286,6 +370,17 @@ class PasswordResetConfirmRequest(BaseModel):
     email:        str
     token:        str
     new_password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _check_email(v)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        return _check_password(v)
+
 
 class PasswordResetConfirmResponse(BaseModel):
     success: bool

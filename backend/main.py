@@ -121,7 +121,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     Stored in PostgreSQL 'users' table.
     Password hashed with bcrypt before saving.
     """
-    existing = db.query(User).filter(User.email == request.email).first()
+    existing = db.query(User).filter(User.email == request.email.lower()).first()
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -313,7 +313,7 @@ def request_password_reset(request: PasswordResetRequestRequest, db: Session = D
     """Generate a 6-digit OTP and send it to the user's email."""
     user = db.query(User).filter(User.email == request.email).first()
     if not user:
-        return PasswordResetRequestResponse(success=True, message="If that email is registered, a reset code has been sent.")
+        raise HTTPException(status_code=404, detail="Account not found with this email")
 
     otp = "".join(random.choices(string.digits, k=6))
     expires_at = datetime.utcnow() + timedelta(minutes=15)
@@ -328,18 +328,18 @@ def request_password_reset(request: PasswordResetRequestRequest, db: Session = D
 
 @app.post("/api/password-reset/confirm", response_model=PasswordResetConfirmResponse, tags=["Auth — PostgreSQL"])
 def confirm_password_reset(request: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
-    """Validate OTP and set a new password."""
-    if len(request.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
-
+    """Validate OTP and set a new password. Password rules enforced by Pydantic schema."""
     reset = db.query(PasswordResetToken).filter(
         PasswordResetToken.email == request.email,
         PasswordResetToken.token == request.token,
         PasswordResetToken.used  == False,
     ).first()
 
-    if not reset or reset.expires_at < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Invalid or expired reset code.")
+    if not reset:
+        raise HTTPException(status_code=400, detail="Invalid OTP. Please enter the correct verification code.")
+
+    if reset.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="OTP expired. Please request a new reset code.")
 
     user = db.query(User).filter(User.email == request.email).first()
     if not user:

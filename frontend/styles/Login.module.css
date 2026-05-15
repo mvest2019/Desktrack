@@ -378,6 +378,87 @@
   display: none;
 }
 
+/* ── Required asterisk ──────────────────────────────────── */
+.required {
+  color: #EF4444;
+  margin-left: 2px;
+  font-weight: 700;
+}
+
+/* ── Input error state ──────────────────────────────────── */
+.inputError {
+  border-color: #EF4444 !important;
+  background: #FFF5F5 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.10) !important;
+}
+
+.fieldError {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: #DC2626;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ── Password strength bar ──────────────────────────────── */
+.strengthBar {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.strengthSeg {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
+  background: #E2E8F0;
+  transition: background 0.25s ease;
+}
+
+.strengthSeg.s1 { background: #EF4444; }
+.strengthSeg.s2 { background: #F97316; }
+.strengthSeg.s3 { background: #EAB308; }
+.strengthSeg.s4 { background: #22C55E; }
+
+.strengthLabel {
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.strengthLabel.s1 { color: #EF4444; }
+.strengthLabel.s2 { color: #F97316; }
+.strengthLabel.s3 { color: #EAB308; }
+.strengthLabel.s4 { color: #22C55E; }
+
+/* ── Resend OTP button ──────────────────────────────────── */
+.resendBtn {
+  background: none;
+  border: none;
+  color: var(--rp-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.resendBtn:disabled {
+  color: #94A3B8;
+  cursor: default;
+  text-decoration: none;
+}
+
+.resendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #64748B;
+}
+
 @media (max-width: 980px) {
   .page {
     grid-template-columns: 1fr;

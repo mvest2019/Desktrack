@@ -30,6 +30,7 @@ import pyautogui                      # Take screenshots
 import base64                         # Convert image → text for API
 import io                             # In-memory file operations
 import json
+import re
 import sys
 from PIL import Image                 # Image processing
 from datetime import datetime
@@ -37,6 +38,50 @@ from activity_tracker import ActivityTracker   # Mouse/keyboard activity trackin
 from app_tracker import AppTracker             # Active window + browser URL tracking
 from config import API_URL, SCREENSHOT_INTERVAL  # Central config (reads server URL)
 from pathlib import Path
+
+# ── Shared validation helpers (mirrors backend) ────────────────────────────
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+_SPECIAL_CHARS_RE = re.compile(r'[!@#$%^&*()\[\]{}\-_=+|\\;:\'",.<>?/`~]')
+
+
+def _validate_email(v: str) -> str:
+    s = v.strip()
+    if not s:
+        return "Email is required"
+    if " " in s:
+        return "Spaces are not allowed in email"
+    if not _EMAIL_RE.match(s):
+        return "Enter a valid email address (e.g. name@domain.com)"
+    return ""
+
+
+def _validate_password(v: str) -> str:
+    if not v:
+        return "Password is required"
+    if " " in v:
+        return "Spaces are not allowed in password"
+    if len(v) < 8:
+        return "Password must be at least 8 characters"
+    if not re.search(r"[A-Z]", v):
+        return "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", v):
+        return "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", v):
+        return "Password must contain at least one number"
+    if not _SPECIAL_CHARS_RE.search(v):
+        return "Password must contain at least one special character (!@#$%^&* etc.)"
+    return ""
+
+
+def _validate_full_name(v: str) -> str:
+    s = v.strip()
+    if not s:
+        return "Full name is required"
+    if re.search(r'\d', s):
+        return "Numbers are not allowed in name"
+    if re.search(r'[^a-zA-Z\s]', s):
+        return "Special characters are not allowed in name"
+    return ""
 
 # ── App icon paths ─────────────────────────────────────────
 _HERE     = Path(__file__).parent
@@ -148,6 +193,8 @@ class LoginWindow(ctk.CTk):
         self._center_window(440, 620)
         ctk.set_appearance_mode("light")
         _set_window_icon(self)
+        self._fp_resend_seconds  = 0
+        self._fp_resend_timer_id = None
         self._build_ui()
 
         # If a session is saved, skip login and show the Start screen
@@ -295,7 +342,7 @@ class LoginWindow(ctk.CTk):
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color="#475569").pack(fill="x", pady=(12, 0))
         self.reg_pass_var = tk.StringVar()
-        self._make_field_row(reg_scroll, "🔒", self.reg_pass_var, "Min 6 characters", show="•")
+        self._make_field_row(reg_scroll, "🔒", self.reg_pass_var, "Min 8 chars, upper, lower, number, symbol", show="•")
 
         self.reg_error_var = tk.StringVar(value="")
         ctk.CTkLabel(reg_scroll, textvariable=self.reg_error_var,
@@ -363,12 +410,30 @@ class LoginWindow(ctk.CTk):
                      text_color="#475569").pack(fill="x")
         self._fp_otp_var = tk.StringVar()
         self._make_field_row(self._fp_otp_frame, "🔢", self._fp_otp_var, "6-digit code")
+
+        # Resend OTP row
+        self._fp_resend_seconds = 0
+        self._fp_resend_timer_id = None
+        resend_row = ctk.CTkFrame(self._fp_otp_frame, fg_color="transparent")
+        resend_row.pack(fill="x", pady=(4, 0))
+        ctk.CTkLabel(resend_row, text="Didn't receive it? ",
+                     font=ctk.CTkFont(size=11), text_color="#64748B").pack(side="left")
+        self._fp_resend_lbl_var = tk.StringVar(value="Resend OTP")
+        self._fp_resend_btn = ctk.CTkButton(
+            resend_row, textvariable=self._fp_resend_lbl_var,
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#4F63D2", fg_color="transparent",
+            hover_color="#EEF2FF", border_width=0, height=20, width=80,
+            command=self._on_resend_otp_click,
+        )
+        self._fp_resend_btn.pack(side="left")
+
         ctk.CTkLabel(self._fp_otp_frame, text="New Password", anchor="w",
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color="#475569").pack(fill="x", pady=(12, 0))
         self._fp_newpass_var = tk.StringVar()
         self._make_field_row(self._fp_otp_frame, "🔒", self._fp_newpass_var,
-                             "Min 6 characters", show="•")
+                             "Min 8 chars, upper/lower/number/symbol", show="•")
         self._fp_conf_error = tk.StringVar(value="")
         ctk.CTkLabel(self._fp_otp_frame, textvariable=self._fp_conf_error,
                      text_color="#DC2626", font=ctk.CTkFont(size=12),
@@ -428,18 +493,25 @@ class LoginWindow(ctk.CTk):
         self._login_frame.pack(fill="both", expand=True, padx=44)
         self.error_var.set("")
         self.login_btn.configure(text="Sign In  →", state="normal")
+        # Cancel any running resend timer
+        if self._fp_resend_timer_id:
+            self.after_cancel(self._fp_resend_timer_id)
+            self._fp_resend_timer_id = None
         self.unbind("<Return>")
         self.bind("<Return>", lambda _: self._on_login_click())
         self.email_entry.focus()
 
     def _on_login_click(self):
         """Called when user clicks Sign In"""
-        email    = self.email_var.get().strip()
-        password = self.password_var.get().strip()
+        email    = self.email_var.get().strip().lower()
+        password = self.password_var.get()
 
-        # Simple validation
-        if not email or not password:
-            self.error_var.set("⚠  Please fill in both fields.")
+        err = _validate_email(email)
+        if err:
+            self.error_var.set(f"⚠  {err}")
+            return
+        if not password:
+            self.error_var.set("⚠  Password is required.")
             return
 
         # Show loading state
@@ -459,7 +531,7 @@ class LoginWindow(ctk.CTk):
         try:
             response = requests.post(
                 f"{API_URL}/api/login",
-                json={"email": email, "password": password},
+                json={"email": email.lower(), "password": password},
                 timeout=10,
             )
 
@@ -497,20 +569,28 @@ class LoginWindow(ctk.CTk):
 
     # ── Registration (inline) ─────────────────────────────
     def _on_register_click(self):
-        name     = self.reg_name_var.get().strip()
-        email    = self.reg_email_var.get().strip()
-        password = self.reg_pass_var.get().strip()
+        name     = self.reg_name_var.get()
+        email    = self.reg_email_var.get().strip().lower()
+        password = self.reg_pass_var.get()
 
-        if not name or not email or not password:
-            self.reg_error_var.set("⚠  Please fill in Name, Email and Password.")
+        name_err  = _validate_full_name(name)
+        email_err = _validate_email(email)
+        pass_err  = _validate_password(password)
+
+        if name_err:
+            self.reg_error_var.set(f"⚠  {name_err}")
             return
-        if len(password) < 6:
-            self.reg_error_var.set("⚠  Password must be at least 6 characters.")
+        if email_err:
+            self.reg_error_var.set(f"⚠  {email_err}")
             return
+        if pass_err:
+            self.reg_error_var.set(f"⚠  {pass_err}")
+            return
+
         self.reg_btn.configure(text="Creating...", state="disabled")
         self.reg_error_var.set("")
         threading.Thread(target=self._do_register,
-                         args=(name, email, password),
+                         args=(name.strip(), email, password),
                          daemon=True).start()
 
     def _do_register(self, name, email, password):
@@ -557,9 +637,10 @@ class LoginWindow(ctk.CTk):
         self.bind("<Return>", lambda _: self._on_forgot_request_click())
 
     def _on_forgot_request_click(self):
-        email = self._fp_email_var.get().strip()
-        if not email:
-            self._fp_req_error.set("⚠  Please enter your email address.")
+        email = self._fp_email_var.get().strip().lower()
+        err = _validate_email(email)
+        if err:
+            self._fp_req_error.set(f"⚠  {err}")
             return
         self._fp_req_btn.configure(text="Sending...", state="disabled")
         self._fp_req_error.set("")
@@ -569,16 +650,20 @@ class LoginWindow(ctk.CTk):
         try:
             res = requests.post(
                 f"{API_URL}/api/password-reset/request",
-                json={"email": email},
+                json={"email": email.lower()},
                 timeout=10,
             )
             data = res.json()
             if res.ok and data.get("success"):
                 self.after(0, self._show_forgot_otp_step)
             else:
-                msg = data.get("detail") or data.get("message", "Failed to send OTP.")
-                self.after(0, lambda: (
-                    self._fp_req_error.set(f"⚠  {msg}"),
+                raw = data.get("detail") or data.get("message", "Failed to send OTP.")
+                if isinstance(raw, list):
+                    msg = raw[0].get("msg", "Invalid input.") if raw else "Invalid input."
+                else:
+                    msg = str(raw)
+                self.after(0, lambda m=msg: (
+                    self._fp_req_error.set(f"⚠  {m}"),
                     self._fp_req_btn.configure(text="Send OTP  →", state="normal"),
                 ))
         except requests.exceptions.ConnectionError:
@@ -599,21 +684,73 @@ class LoginWindow(ctk.CTk):
         self._fp_conf_error.set("")
         self._fp_conf_btn.configure(text="Reset Password  →", state="normal", fg_color="#4F63D2")
         self._fp_otp_frame.pack(fill="both", expand=True)
+        self._start_resend_timer()
         self.unbind("<Return>")
         self.bind("<Return>", lambda _: self._on_forgot_confirm_click())
 
-    def _on_forgot_confirm_click(self):
-        otp = self._fp_otp_var.get().strip()
-        new_pass = self._fp_newpass_var.get().strip()
-        if not otp or len(otp) != 6 or not otp.isdigit():
-            self._fp_conf_error.set("⚠  Enter the 6-digit OTP from your email.")
+    def _start_resend_timer(self):
+        """Start a 30-second cooldown before resend is allowed."""
+        self._fp_resend_seconds = 30
+        self._fp_resend_btn.configure(state="disabled")
+        self._tick_resend()
+
+    def _tick_resend(self):
+        if self._fp_resend_seconds > 0:
+            self._fp_resend_lbl_var.set(f"Resend in {self._fp_resend_seconds}s")
+            self._fp_resend_seconds -= 1
+            self._fp_resend_timer_id = self.after(1000, self._tick_resend)
+        else:
+            self._fp_resend_lbl_var.set("Resend OTP")
+            self._fp_resend_btn.configure(state="normal")
+
+    def _on_resend_otp_click(self):
+        email = self._fp_email_var.get().strip().lower()
+        if not email:
             return
-        if len(new_pass) < 6:
-            self._fp_conf_error.set("⚠  Password must be at least 6 characters.")
+        self._fp_resend_btn.configure(state="disabled")
+        self._fp_conf_error.set("")
+        threading.Thread(target=self._do_resend_otp, args=(email,), daemon=True).start()
+
+    def _do_resend_otp(self, email: str):
+        try:
+            res = requests.post(
+                f"{API_URL}/api/password-reset/request",
+                json={"email": email},
+                timeout=10,
+            )
+            data = res.json()
+            if res.ok and data.get("success"):
+                self.after(0, lambda: (
+                    self._fp_conf_error.set("✓  New code sent — check your email."),
+                    self._start_resend_timer(),
+                ))
+            else:
+                msg = data.get("detail") or data.get("message", "Failed to resend OTP.")
+                self.after(0, lambda: (
+                    self._fp_conf_error.set(f"⚠  {msg}"),
+                    self._fp_resend_btn.configure(state="normal"),
+                    self._fp_resend_lbl_var.set("Resend OTP"),
+                ))
+        except Exception as e:
+            self.after(0, lambda: (
+                self._fp_conf_error.set("⚠  Cannot connect to server."),
+                self._fp_resend_btn.configure(state="normal"),
+                self._fp_resend_lbl_var.set("Resend OTP"),
+            ))
+
+    def _on_forgot_confirm_click(self):
+        otp      = self._fp_otp_var.get().strip()
+        new_pass = self._fp_newpass_var.get()
+        if not otp or len(otp) != 6 or not otp.isdigit():
+            self._fp_conf_error.set("⚠  Enter the 6-digit verification code from your email.")
+            return
+        pass_err = _validate_password(new_pass)
+        if pass_err:
+            self._fp_conf_error.set(f"⚠  {pass_err}")
             return
         self._fp_conf_btn.configure(text="Resetting...", state="disabled")
         self._fp_conf_error.set("")
-        email = self._fp_email_var.get().strip()
+        email = self._fp_email_var.get().strip().lower()
         threading.Thread(
             target=self._do_forgot_confirm,
             args=(email, otp, new_pass),
@@ -624,16 +761,20 @@ class LoginWindow(ctk.CTk):
         try:
             res = requests.post(
                 f"{API_URL}/api/password-reset/confirm",
-                json={"email": email, "token": otp, "new_password": new_pass},
+                json={"email": email.lower(), "token": otp, "new_password": new_pass},
                 timeout=10,
             )
             data = res.json()
             if res.ok and data.get("success"):
                 self.after(0, self._show_forgot_done)
             else:
-                msg = data.get("detail") or data.get("message", "Password reset failed.")
-                self.after(0, lambda: (
-                    self._fp_conf_error.set(f"⚠  {msg}"),
+                raw = data.get("detail") or data.get("message", "Password reset failed.")
+                if isinstance(raw, list):
+                    msg = raw[0].get("msg", "Invalid input.") if raw else "Invalid input."
+                else:
+                    msg = str(raw)
+                self.after(0, lambda m=msg: (
+                    self._fp_conf_error.set(f"⚠  {m}"),
                     self._fp_conf_btn.configure(text="Reset Password  →", state="normal"),
                 ))
         except requests.exceptions.ConnectionError:
