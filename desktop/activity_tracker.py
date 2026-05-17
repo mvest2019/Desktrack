@@ -3,8 +3,10 @@
  activity_tracker.py — Hubstaff-style activity tracking
 =============================================================
  How it works:
-   1. Listens for mouse movement/clicks and keyboard presses
+   1. Listens for mouse clicks/scrolls and keyboard presses
       using pynput (runs in background threads).
+      NOTE: mouse *movement* updates the idle timer but is NOT
+      counted as a mouse event — only clicks and scrolls are.
    2. Every second, checks if the user is active or idle:
         idle  = no event for more than IDLE_THRESHOLD seconds
         active = at least one event in the last IDLE_THRESHOLD seconds
@@ -21,7 +23,7 @@ import requests
 from datetime import datetime
 
 from pynput import mouse, keyboard
-from config import API_URL   # ✅ reads from config.ini / env var (was hardcoded localhost)
+from config import API_URL
 
 # ── Config ─────────────────────────────────────────────────
 # IDLE_THRESHOLD must always be less than WINDOW_SECONDS
@@ -30,6 +32,13 @@ from config import API_URL   # ✅ reads from config.ini / env var (was hardcode
 IDLE_THRESHOLD  = 180   # Seconds of silence → mark as idle (3 mins)
 WINDOW_SECONDS  = 600   # Length of one tracking window (10 mins)
 
+# Mouse move filtering constants
+_MOVE_MIN_DISTANCE_PX = 5    # Ignore moves smaller than this (sub-pixel jitter)
+_MOVE_RATE_LIMIT_SECS = 0.1  # Max one move activity signal per 100 ms
+
+# Debug log interval (seconds between debug summaries in the log)
+_DEBUG_INTERVAL_SECS = 30
+
 
 class ActivityTracker:
     """
@@ -37,13 +46,19 @@ class ActivityTracker:
     It runs entirely in background threads — never blocks the UI.
 
     Internal state (updated by pynput callbacks):
-      _last_event_time  — timestamp of the last mouse/keyboard event
-      _mouse_events     — count of mouse moves + clicks in this window
+      _last_event_time  — timestamp of the last meaningful mouse/keyboard event
+      _mouse_events     — count of mouse clicks + scrolls in this window
       _keyboard_events  — count of key presses in this window
 
     Internal state (updated by the 1-second ticker):
       _active_seconds   — seconds marked ACTIVE in this window
       _idle_seconds     — seconds marked IDLE in this window
+
+    Debug counters (never reset, only used for logging):
+      _dbg_move    — raw on_move calls received
+      _dbg_click   — raw on_click (pressed=True) calls received
+      _dbg_scroll  — raw on_scroll calls received
+      _dbg_key     — raw on_key_press calls received
     """
 
     def __init__(self, log_fn=None):
@@ -63,7 +78,7 @@ class ActivityTracker:
         self._active_seconds  = 0
         self._idle_seconds    = 0
 
-        # Timestamp of last mouse or keyboard event
+        # Timestamp of last meaningful mouse or keyboard event
         self._last_event_time = time.time()
 
         # Window boundary timestamps
@@ -73,6 +88,20 @@ class ActivityTracker:
         self._mouse_listener    = None
         self._keyboard_listener = None
 
+        # Move-event filtering state (set in _start_listeners)
+        self._last_mouse_pos       = None   # (x, y) of last accepted move
+        self._last_move_accept_time = 0.0   # epoch seconds of last accepted move
+
+        # Debug counters — cumulative since start, never reset
+        self._dbg_move   = 0
+        self._dbg_click  = 0
+        self._dbg_scroll = 0
+        self._dbg_key    = 0
+        self._dbg_last_logged = 0.0  # epoch time of last debug summary
+
+        # Lock for counter mutations from pynput threads
+        self._lock = threading.Lock()
+
     # ── Public API ──────────────────────────────────────────
 
     def start(self, user_id: int):
@@ -81,16 +110,22 @@ class ActivityTracker:
         self._running  = True
         self._window_start = datetime.now()
         self._last_event_time = time.time()
+        self._dbg_last_logged = time.time()
 
         self._start_listeners()
 
-        # Thread 1: 1-second ticker (active/idle bookkeeping)
+        # Thread 1: 1-second ticker (active/idle bookkeeping + debug logs)
         threading.Thread(target=self._tick_loop, daemon=True).start()
 
         # Thread 2: window flusher (fires every WINDOW_SECONDS)
         threading.Thread(target=self._window_loop, daemon=True).start()
 
-        self._log(f"📊 Activity tracker started (window={WINDOW_SECONDS}s, idle threshold={IDLE_THRESHOLD}s)")
+        self._log(
+            f"📊 Activity tracker started "
+            f"(window={WINDOW_SECONDS}s, idle_threshold={IDLE_THRESHOLD}s, "
+            f"move_min_dist={_MOVE_MIN_DISTANCE_PX}px, "
+            f"move_rate_limit={_MOVE_RATE_LIMIT_SECS}s)"
+        )
 
     def flush(self):
         """Force-flush the current window to the backend immediately (call on logout)."""
@@ -100,7 +135,7 @@ class ActivityTracker:
     def stop(self):
         """Call this on logout to clean up listeners."""
         self._running = False
-        self.flush()  # flush current window before stopping
+        self.flush()
         if self._mouse_listener:
             self._mouse_listener.stop()
         if self._keyboard_listener:
@@ -126,19 +161,50 @@ class ActivityTracker:
     # ── pynput listeners ────────────────────────────────────
 
     def _start_listeners(self):
-        """Start mouse and keyboard listeners in their own threads."""
+        """
+        Start mouse and keyboard listeners.
+
+        Mouse event strategy:
+          on_move  → updates idle timer only (filtered by distance + rate limit).
+                     Does NOT increment _mouse_events — moves are too noisy.
+          on_click → increments _mouse_events for button-down events only.
+          on_scroll → increments _mouse_events for every scroll tick.
+        """
 
         def on_move(x, y):
-            self._on_activity("mouse")
+            # Always count the raw call for debug purposes (no lock needed — GIL ok for +=1)
+            self._dbg_move += 1
+
+            now = time.time()
+
+            # Rate-limit: ignore moves that arrive faster than _MOVE_RATE_LIMIT_SECS
+            if now - self._last_move_accept_time < _MOVE_RATE_LIMIT_SECS:
+                return
+
+            # Distance filter: ignore sub-pixel OS jitter
+            if self._last_mouse_pos is not None:
+                dx = x - self._last_mouse_pos[0]
+                dy = y - self._last_mouse_pos[1]
+                if (dx * dx + dy * dy) < (_MOVE_MIN_DISTANCE_PX ** 2):
+                    return
+
+            # Genuine movement detected — update idle timer only, no event count
+            self._last_mouse_pos        = (x, y)
+            self._last_move_accept_time = now
+            self._last_event_time       = now
 
         def on_click(x, y, button, pressed):
-            if pressed:
-                self._on_activity("mouse")
+            if not pressed:
+                return  # Ignore button-release; only count button-down
+            self._dbg_click += 1
+            self._on_activity("mouse")
 
         def on_scroll(x, y, dx, dy):
+            self._dbg_scroll += 1
             self._on_activity("mouse")
 
         def on_key_press(key):
+            self._dbg_key += 1
             self._on_activity("keyboard")
 
         self._mouse_listener = mouse.Listener(
@@ -150,12 +216,18 @@ class ActivityTracker:
         self._keyboard_listener.start()
 
     def _on_activity(self, kind: str):
-        """Called by pynput on any mouse or keyboard event."""
-        self._last_event_time = time.time()
-        if kind == "mouse":
-            self._mouse_events += 1
-        else:
-            self._keyboard_events += 1
+        """
+        Called for clicks, scrolls, and key presses — genuine user actions.
+        Updates the idle timer and increments the appropriate event counter.
+        Mouse *movement* does NOT go through here (it only updates _last_event_time).
+        """
+        now = time.time()
+        with self._lock:
+            self._last_event_time = now
+            if kind == "mouse":
+                self._mouse_events += 1
+            else:
+                self._keyboard_events += 1
 
     # ── 1-second ticker ─────────────────────────────────────
 
@@ -163,15 +235,30 @@ class ActivityTracker:
         """
         Runs every second.
         Decides if the current second should count as ACTIVE or IDLE
-        and increments the appropriate counter.
+        and emits a periodic debug summary showing per-handler fire counts.
         """
         while self._running:
             time.sleep(1)
             idle_secs = time.time() - self._last_event_time
-            if idle_secs < IDLE_THRESHOLD:
-                self._active_seconds += 1
-            else:
-                self._idle_seconds += 1
+            with self._lock:
+                if idle_secs < IDLE_THRESHOLD:
+                    self._active_seconds += 1
+                else:
+                    self._idle_seconds += 1
+
+            # Periodic debug summary
+            now = time.time()
+            if now - self._dbg_last_logged >= _DEBUG_INTERVAL_SECS:
+                self._dbg_last_logged = now
+                self._log(
+                    f"[DEBUG] raw handler calls — "
+                    f"on_move={self._dbg_move}, "
+                    f"on_click={self._dbg_click}, "
+                    f"on_scroll={self._dbg_scroll}, "
+                    f"on_key={self._dbg_key} | "
+                    f"counted events — mouse={self._mouse_events}, "
+                    f"keyboard={self._keyboard_events}"
+                )
 
     # ── 10-minute window flusher ─────────────────────────────
 
@@ -188,24 +275,31 @@ class ActivityTracker:
 
     def _flush_window(self):
         """Calculate activity % for this window and POST to backend."""
-        window_end   = datetime.now()
-        total        = self._active_seconds + self._idle_seconds
-        activity_pct = round((self._active_seconds / total) * 100, 1) if total > 0 else 0.0
+        with self._lock:
+            active   = self._active_seconds
+            idle     = self._idle_seconds
+            m_events = self._mouse_events
+            k_events = self._keyboard_events
+            w_start  = self._window_start
+            w_end    = datetime.now()
+
+        total        = active + idle
+        activity_pct = round((active / total) * 100, 1) if total > 0 else 0.0
 
         payload = {
             "user_id":          self._user_id,
-            "window_start":     self._window_start.isoformat(),
-            "window_end":       window_end.isoformat(),
-            "active_seconds":   self._active_seconds,
-            "idle_seconds":     self._idle_seconds,
+            "window_start":     w_start.isoformat(),
+            "window_end":       w_end.isoformat(),
+            "active_seconds":   active,
+            "idle_seconds":     idle,
             "activity_percent": activity_pct,
-            "mouse_events":     self._mouse_events,
-            "keyboard_events":  self._keyboard_events,
+            "mouse_events":     m_events,
+            "keyboard_events":  k_events,
         }
 
         self._log(
-            f"📊 Window done: active={self._active_seconds}s "
-            f"idle={self._idle_seconds}s pct={activity_pct}%"
+            f"📊 Window done: active={active}s idle={idle}s pct={activity_pct}% "
+            f"mouse_events={m_events} keyboard_events={k_events}"
         )
 
         try:
@@ -218,11 +312,12 @@ class ActivityTracker:
             self._log(f"⚠  Activity log error: {e}")
 
         # Reset for next window
-        self._window_start    = datetime.now()
-        self._active_seconds  = 0
-        self._idle_seconds    = 0
-        self._mouse_events    = 0
-        self._keyboard_events = 0
+        with self._lock:
+            self._window_start    = datetime.now()
+            self._active_seconds  = 0
+            self._idle_seconds    = 0
+            self._mouse_events    = 0
+            self._keyboard_events = 0
 
     # ── Internal logging ─────────────────────────────────────
 
