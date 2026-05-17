@@ -911,9 +911,9 @@ def get_user_stats(user_id: int, db: Session = Depends(get_db)):
         ActivityLog.window_start >= today_start,
     ).all()
     today_active_sec = sum(l.active_seconds for l in today_logs)
-    today_pct = round(
-        sum(l.activity_percent for l in today_logs) / len(today_logs), 1
-    ) if today_logs else 0.0
+    today_idle_sec   = sum(l.idle_seconds   for l in today_logs)
+    today_total      = today_active_sec + today_idle_sec
+    today_pct        = round((today_active_sec / today_total) * 100, 1) if today_total > 0 else 0.0
 
     return {
         "user_id": user_id,
